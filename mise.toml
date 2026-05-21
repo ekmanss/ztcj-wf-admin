@@ -1,0 +1,77 @@
+min_version = "2026.5.0"
+
+[tools]
+node = "24"
+"npm:pnpm" = "11.1.3"
+
+[settings]
+lockfile = true
+
+[env]
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tasks.install]
+description = "Install project dependencies from the lockfile"
+run = "pnpm install --frozen-lockfile"
+sources = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "mise.toml"]
+outputs = ["node_modules/.pnpm/lock.yaml"]
+
+[tasks."install:update"]
+description = "Install dependencies and allow pnpm-lock.yaml updates"
+run = "pnpm install"
+
+[tasks.dev]
+description = "Start the Vite development server"
+depends = ["install"]
+run = "pnpm dev"
+
+[tasks.build]
+description = "Type-check and build the production bundle"
+depends = ["install"]
+run = "pnpm build"
+
+[tasks.lint]
+description = "Run ESLint"
+depends = ["install"]
+run = "pnpm lint"
+
+[tasks."format:check"]
+description = "Check formatting with Prettier"
+depends = ["install"]
+run = "pnpm format:check"
+
+[tasks.format]
+description = "Format files with Prettier"
+depends = ["install"]
+run = "pnpm format"
+
+[tasks.knip]
+description = "Analyze unused files and dependencies"
+depends = ["install"]
+run = "pnpm knip"
+
+[tasks."test:browser:install"]
+description = "Install the Chromium browser needed by Vitest browser tests"
+depends = ["install"]
+run = "pnpm test:browser:install"
+
+[tasks.test]
+description = "Run browser-based Vitest tests"
+depends = ["test:browser:install"]
+run = "pnpm test"
+
+[tasks."test:watch"]
+description = "Run browser-based Vitest tests in watch mode"
+depends = ["test:browser:install"]
+run = "pnpm test:watch"
+
+[tasks.ci]
+description = "Run the full local CI suite"
+depends = ["install"]
+run = """
+pnpm lint
+pnpm format:check
+pnpm test:browser:install
+pnpm test
+pnpm build
+"""

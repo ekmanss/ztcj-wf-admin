@@ -17,31 +17,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup mise
+        uses: jdx/mise-action@v3
         with:
-          node-version: 20
+          version: 2026.5.11
+          install: true
+          cache: true
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint the code
-        run: pnpm lint
-
-      # - name: Analyze unused files and dependencies
-      #   run: pnpm knip
-
-      - name: Run Prettier check
-        run: pnpm format:check
-
-      - name: Install browsers
-        run: pnpm test:browser:install
-
-      - name: Run tests
-        run: pnpm test
-
-      - name: Build the project
-        run: pnpm build
+      - name: Run CI
+        run: mise run ci

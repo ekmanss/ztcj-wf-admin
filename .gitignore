@@ -13,6 +13,8 @@ dist-ssr
 *.local
 
 .env
+mise.local.toml
+mise.local.lock
 
 # Editor directories and files
 .vscode/*

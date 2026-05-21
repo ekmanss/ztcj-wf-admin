@@ -22,19 +22,25 @@ Thank you for considering contributing to **shadcn-admin**! Every contribution i
    git clone https://github.com/your-username/shadcn-admin.git
    ```
 
-3. **Install dependencies:**
+3. **Install mise** if you do not already have it:
 
    ```bash
-   pnpm install
+   curl https://mise.run | sh
    ```
 
-4. **Run the project locally:**
+4. **Trust the project environment:**
 
    ```bash
-   pnpm dev
+   mise trust
    ```
 
-5. Create a new branch for your contribution:
+5. **Run the project locally:**
+
+   ```bash
+   mise run dev
+   ```
+
+6. Create a new branch for your contribution:
 
    ```bash
    git checkout -b feature/your-feature
@@ -61,7 +67,7 @@ Thank you for considering contributing to **shadcn-admin**! Every contribution i
 > **Tips!** Before submitting your changes, run the following commands:
 
 ```bash
-pnpm lint && pnpm format && pnpm knip && pnpm build
+mise run ci
 ```
 
 ---
