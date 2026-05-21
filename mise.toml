@@ -1,5 +1,6 @@
 min_version = "2026.5.0"
 
+# 工具链
 [tools]
 node = "24"
 "npm:pnpm" = "11.1.3"
@@ -10,84 +11,92 @@ lockfile = true
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
 
+# 依赖管理
 [tasks.install]
-description = "Install project dependencies from the lockfile"
+description = "根据锁文件安装项目依赖"
 run = "pnpm install --frozen-lockfile"
 sources = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "mise.toml"]
 outputs = ["node_modules/.pnpm/lock.yaml"]
 
 [tasks."install:update"]
-description = "Install dependencies and allow pnpm-lock.yaml updates"
+description = "安装依赖，并允许更新 pnpm-lock.yaml"
 run = "pnpm install"
 
+# 应用生命周期
 [tasks.dev]
-description = "Start the Vite development server"
+description = "启动 Vite 开发服务器"
 depends = ["install"]
 run = "pnpm exec vite"
 
 [tasks.build]
-description = "Type-check and build the production bundle"
-depends = ["install"]
-run = "pnpm exec tsc -b && pnpm exec vite build"
+description = "执行类型检查并构建生产产物"
+depends = ["typecheck"]
+run = "pnpm exec vite build"
 
 [tasks.preview]
-description = "Preview the production bundle"
+description = "预览生产构建产物"
 depends = ["install"]
 run = "pnpm exec vite preview"
 
+# 质量检查
 [tasks.lint]
-description = "Run ESLint"
+description = "运行 ESLint 检查"
 depends = ["install"]
 run = "pnpm exec eslint ."
 
 [tasks."format:check"]
-description = "Check formatting with Prettier"
+description = "使用 Prettier 检查格式"
 depends = ["install"]
 run = "pnpm exec prettier --check ."
 
 [tasks.format]
-description = "Format files with Prettier"
+description = "使用 Prettier 格式化文件"
 depends = ["install"]
 run = "pnpm exec prettier --write ."
 
+[tasks.typecheck]
+description = "运行 TypeScript 项目检查"
+depends = ["install"]
+run = "pnpm exec tsc -b"
+
 [tasks.knip]
-description = "Analyze unused files and dependencies"
+description = "分析未使用的文件和依赖"
 depends = ["install"]
 run = "pnpm exec knip"
 
+# 测试
 [tasks."test:browser:install"]
-description = "Install the Chromium browser needed by Vitest browser tests"
+description = "安装 Vitest 浏览器测试所需的 Chromium"
+hide = true
 depends = ["install"]
 run = "pnpm exec playwright install chromium --with-deps"
 
 [tasks.test]
-description = "Run browser-based Vitest tests"
+description = "运行基于浏览器的 Vitest 测试"
 depends = ["test:browser:install"]
 run = "pnpm exec vitest run --browser.headless"
 
 [tasks."test:watch"]
-description = "Run browser-based Vitest tests in watch mode"
+description = "以监听模式运行基于浏览器的 Vitest 测试"
 depends = ["test:browser:install"]
 run = "pnpm exec vitest --browser.headless"
 
 [tasks."test:browser"]
-description = "Run browser-based Vitest tests interactively"
+description = "以交互模式运行基于浏览器的 Vitest 测试"
 depends = ["test:browser:install"]
 run = "pnpm exec vitest"
 
 [tasks."test:coverage"]
-description = "Run browser-based Vitest tests with coverage"
+description = "运行基于浏览器的 Vitest 覆盖率测试"
 depends = ["test:browser:install"]
 run = "pnpm exec vitest run --coverage --browser.headless"
 
+# 持续集成
 [tasks.ci]
-description = "Run the full local CI suite"
-depends = ["install"]
+description = "运行完整的本地持续集成检查"
 run = """
-pnpm exec eslint .
-pnpm exec prettier --check .
-pnpm exec playwright install chromium --with-deps
-pnpm exec vitest run --browser.headless
-pnpm exec tsc -b
-pnpm exec vite build
+mise run lint
+mise run format:check
+mise run test
+mise run build
 """
