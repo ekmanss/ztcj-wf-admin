@@ -76,7 +76,7 @@ If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest 
 
 ## Run Locally
 
-This project uses [mise](https://mise.jdx.dev/) to manage Node.js, pnpm, and project tasks.
+This project uses [mise](https://mise.jdx.dev/) to manage Node.js, pnpm, and project tasks. Run project commands through `mise`; `package.json` intentionally does not define task scripts.
 
 ```bash
 git clone https://github.com/satnaing/shadcn-admin.git
@@ -88,13 +88,16 @@ mise run dev
 
 The dev server starts on `http://localhost:5173` by default. If that port is busy, Vite will use the next available port.
 
-| Command            | Description                          |
-| ------------------ | ------------------------------------ |
-| `mise run install` | Install dependencies from lockfiles  |
-| `mise run dev`     | Start the local dev server           |
-| `mise run test`    | Run browser-based tests              |
-| `mise run build`   | Build the production bundle          |
-| `mise run ci`      | Run lint, format check, tests, build |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `mise run install`      | Install dependencies from lockfiles  |
+| `mise run dev`          | Start the local dev server           |
+| `mise run preview`      | Preview the production bundle        |
+| `mise run lint`         | Run ESLint                           |
+| `mise run format:check` | Check formatting                     |
+| `mise run test`         | Run browser-based tests              |
+| `mise run build`        | Build the production bundle          |
+| `mise run ci`           | Run lint, format check, tests, build |
 
 For Clerk auth, copy `.env.example` to `.env` and set `VITE_CLERK_PUBLISHABLE_KEY`.
 

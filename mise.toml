@@ -23,55 +23,71 @@ run = "pnpm install"
 [tasks.dev]
 description = "Start the Vite development server"
 depends = ["install"]
-run = "pnpm dev"
+run = "pnpm exec vite"
 
 [tasks.build]
 description = "Type-check and build the production bundle"
 depends = ["install"]
-run = "pnpm build"
+run = "pnpm exec tsc -b && pnpm exec vite build"
+
+[tasks.preview]
+description = "Preview the production bundle"
+depends = ["install"]
+run = "pnpm exec vite preview"
 
 [tasks.lint]
 description = "Run ESLint"
 depends = ["install"]
-run = "pnpm lint"
+run = "pnpm exec eslint ."
 
 [tasks."format:check"]
 description = "Check formatting with Prettier"
 depends = ["install"]
-run = "pnpm format:check"
+run = "pnpm exec prettier --check ."
 
 [tasks.format]
 description = "Format files with Prettier"
 depends = ["install"]
-run = "pnpm format"
+run = "pnpm exec prettier --write ."
 
 [tasks.knip]
 description = "Analyze unused files and dependencies"
 depends = ["install"]
-run = "pnpm knip"
+run = "pnpm exec knip"
 
 [tasks."test:browser:install"]
 description = "Install the Chromium browser needed by Vitest browser tests"
 depends = ["install"]
-run = "pnpm test:browser:install"
+run = "pnpm exec playwright install chromium --with-deps"
 
 [tasks.test]
 description = "Run browser-based Vitest tests"
 depends = ["test:browser:install"]
-run = "pnpm test"
+run = "pnpm exec vitest run --browser.headless"
 
 [tasks."test:watch"]
 description = "Run browser-based Vitest tests in watch mode"
 depends = ["test:browser:install"]
-run = "pnpm test:watch"
+run = "pnpm exec vitest --browser.headless"
+
+[tasks."test:browser"]
+description = "Run browser-based Vitest tests interactively"
+depends = ["test:browser:install"]
+run = "pnpm exec vitest"
+
+[tasks."test:coverage"]
+description = "Run browser-based Vitest tests with coverage"
+depends = ["test:browser:install"]
+run = "pnpm exec vitest run --coverage --browser.headless"
 
 [tasks.ci]
 description = "Run the full local CI suite"
 depends = ["install"]
 run = """
-pnpm lint
-pnpm format:check
-pnpm test:browser:install
-pnpm test
-pnpm build
+pnpm exec eslint .
+pnpm exec prettier --check .
+pnpm exec playwright install chromium --with-deps
+pnpm exec vitest run --browser.headless
+pnpm exec tsc -b
+pnpm exec vite build
 """
