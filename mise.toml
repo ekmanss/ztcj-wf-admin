@@ -15,7 +15,13 @@ _.path = ["{{config_root}}/node_modules/.bin"]
 [tasks.install]
 description = "根据锁文件安装项目依赖"
 run = "pnpm install --frozen-lockfile"
-sources = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "mise.toml"]
+sources = [
+  "package.json",
+  "apps/*/package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "mise.toml",
+]
 outputs = ["node_modules/.pnpm/lock.yaml"]
 
 [tasks."install:update"]
@@ -24,79 +30,87 @@ run = "pnpm install"
 
 # 应用生命周期
 [tasks.dev]
-description = "启动 Vite 开发服务器"
+description = "并行启动 monorepo 内所有开发服务"
 depends = ["install"]
-run = "pnpm exec vite"
+run = "pnpm run dev"
+
+[tasks."dev:admin"]
+description = "启动前端管理台开发服务器"
+depends = ["install"]
+run = "pnpm run dev:admin"
+
+[tasks."dev:api"]
+description = "启动 NestJS API 开发服务器"
+depends = ["install"]
+run = "pnpm run dev:api"
 
 [tasks.build]
-description = "执行类型检查并构建生产产物"
+description = "构建 monorepo 内所有应用"
 depends = ["typecheck"]
-run = "pnpm exec vite build"
+run = "pnpm run build"
 
 [tasks.preview]
 description = "预览生产构建产物"
 depends = ["install"]
-run = "pnpm exec vite preview"
+run = "pnpm --filter @ztcj/admin preview"
 
 # 质量检查
 [tasks.lint]
 description = "运行 ESLint 检查"
 depends = ["install"]
-run = "pnpm exec eslint ."
+run = "pnpm run lint"
 
 [tasks."format:check"]
 description = "使用 Prettier 检查格式"
 depends = ["install"]
-run = "pnpm exec prettier --check ."
+run = "pnpm run format:check"
 
 [tasks.format]
 description = "使用 Prettier 格式化文件"
 depends = ["install"]
-run = "pnpm exec prettier --write ."
+run = "pnpm run format"
 
 [tasks.typecheck]
-description = "运行 TypeScript 项目检查"
+description = "运行 monorepo 内 TypeScript 项目检查"
 depends = ["install"]
-run = "pnpm exec tsc -b"
+run = "pnpm run typecheck"
 
 [tasks.knip]
 description = "分析未使用的文件和依赖"
 depends = ["install"]
-run = "pnpm exec knip"
+run = "pnpm --filter @ztcj/admin knip"
 
 # 测试
 [tasks."test:browser:install"]
 description = "安装 Vitest 浏览器测试所需的 Chromium"
 hide = true
 depends = ["install"]
-run = "pnpm exec playwright install chromium --with-deps"
+run = "pnpm --filter @ztcj/admin exec playwright install chromium --with-deps"
 
 [tasks.test]
-description = "运行基于浏览器的 Vitest 测试"
+description = "运行 monorepo 内测试"
 depends = ["test:browser:install"]
-run = "pnpm exec vitest run --browser.headless"
+run = "pnpm run test"
 
 [tasks."test:watch"]
 description = "以监听模式运行基于浏览器的 Vitest 测试"
 depends = ["test:browser:install"]
-run = "pnpm exec vitest --browser.headless"
+run = "pnpm --filter @ztcj/admin test:watch"
 
 [tasks."test:browser"]
 description = "以交互模式运行基于浏览器的 Vitest 测试"
 depends = ["test:browser:install"]
-run = "pnpm exec vitest"
+run = "pnpm --filter @ztcj/admin test:browser"
 
 [tasks."test:coverage"]
 description = "运行基于浏览器的 Vitest 覆盖率测试"
 depends = ["test:browser:install"]
-run = "pnpm exec vitest run --coverage --browser.headless"
+run = "pnpm --filter @ztcj/admin test:coverage"
 
 # 持续集成
 [tasks.ci]
 description = "运行完整的本地持续集成检查"
+depends = ["install"]
 run = """
-mise run lint
-mise run format:check
-mise run test
-mise run build
+pnpm run ci
 """

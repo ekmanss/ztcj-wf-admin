@@ -1,3 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
 allowBuilds:
   '@clerk/shared': false
+  '@nestjs/core': true
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@nestjs/common@11.1.22'
+  - '@nestjs/core@11.1.22'
+  - '@nestjs/platform-express@11.1.22'

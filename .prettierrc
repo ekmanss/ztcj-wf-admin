@@ -10,5 +10,5 @@
   "endOfLine": "lf",
   "plugins": ["prettier-plugin-tailwindcss"],
   "tailwindFunctions": ["cn", "clsx"],
-  "tailwindStylesheet": "./src/styles/index.css"
+  "tailwindStylesheet": "./apps/admin/src/styles/index.css"
 }

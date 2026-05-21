@@ -1,120 +1,85 @@
-# Shadcn Admin Dashboard
+# ZTCJ WF Admin
 
-Admin Dashboard UI crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
+后台管理台 monorepo，包含：
 
-![alt text](public/images/shadcn-admin.png)
+- `apps/admin`：React、Vite、TanStack Router、TanStack Query 管理台前端。
+- `apps/api`：NestJS、Drizzle ORM、PostgreSQL 后端 API。
 
-[![Sponsored by Clerk](https://img.shields.io/badge/Sponsored%20by-Clerk-5b6ee1?logo=clerk)](https://go.clerk.com/GttUAaK)
+## Requirements
 
-I've been creating dashboard UIs at work and for my personal projects. I always wanted to make a reusable collection of dashboard UI for future projects; and here it is now. While I've created a few custom components, some of the code is directly adapted from ShadcnUI examples.
+- Node.js `>=24.0.0 <25`
+- pnpm `>=11.1.3 <12`
+- 推荐通过 `mise` 管理工具链。
 
-> This is not a starter project (template) though. I'll probably make one in the future.
+## Environment
 
-## Features
-
-- Light/dark mode
-- Responsive
-- Accessible
-- With built-in Sidebar component
-- Global search command
-- 10+ pages
-- Extra custom components
-- RTL support
-
-<details>
-<summary>Customized Components (click to expand)</summary>
-
-This project uses Shadcn UI components, but some have been slightly modified for better RTL (Right-to-Left) support and other improvements. These customized components differ from the original Shadcn UI versions.
-
-If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest add <component>`), it's generally safe for non-customized components. For the listed customized ones, you may need to manually merge changes to preserve the project's modifications and avoid overwriting RTL support or other updates.
-
-> If you don't require RTL support, you can safely update the 'RTL Updated Components' via the Shadcn CLI, as these changes are primarily for RTL compatibility. The 'Modified Components' may have other customizations to consider.
-
-### Modified Components
-
-- scroll-area
-- sonner
-- separator
-
-### RTL Updated Components
-
-- alert-dialog
-- calendar
-- command
-- dialog
-- dropdown-menu
-- select
-- table
-- sheet
-- sidebar
-- switch
-
-**Notes:**
-
-- **Modified Components**: These have general updates, potentially including RTL adjustments.
-- **RTL Updated Components**: These have specific changes for RTL language support (e.g., layout, positioning).
-- For implementation details, check the source files in `src/components/ui/`.
-- All other Shadcn UI components in the project are standard and can be safely updated via the CLI.
-
-</details>
-
-## Tech Stack
-
-**UI:** [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
-
-**Build Tool:** [Vite](https://vitejs.dev/)
-
-**Routing:** [TanStack Router](https://tanstack.com/router/latest)
-
-**Type Checking:** [TypeScript](https://www.typescriptlang.org/)
-
-**Linting/Formatting:** [ESLint](https://eslint.org/) & [Prettier](https://prettier.io/)
-
-**Icons:** [Lucide Icons](https://lucide.dev/icons/), [Tabler Icons](https://tabler.io/icons) (Brand icons only)
-
-**Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
-
-## Run Locally
-
-This project uses [mise](https://mise.jdx.dev/) to manage Node.js, pnpm, and project tasks. Run project commands through `mise`; `package.json` intentionally does not define task scripts.
+复制根目录示例：
 
 ```bash
-git clone https://github.com/satnaing/shadcn-admin.git
-cd shadcn-admin
-curl https://mise.run | sh # skip if mise is already installed
+cp .env.example .env
+```
+
+关键变量：
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/ztcj_wf_admin
+PORT=3001
+CORS_ORIGIN=http://localhost:5173
+VITE_API_BASE_URL=http://localhost:3001/api
+VITE_CLERK_PUBLISHABLE_KEY=
+```
+
+`apps/admin/.env.example` 保留前端单独运行时需要的 Vite 变量。
+
+## Commands
+
+```bash
 mise trust
+mise run install:update
 mise run dev
 ```
 
-The dev server starts on `http://localhost:5173` by default. If that port is busy, Vite will use the next available port.
+常用命令：
 
-| Command                 | Description                          |
-| ----------------------- | ------------------------------------ |
-| `mise run install`      | Install dependencies from lockfiles  |
-| `mise run dev`          | Start the local dev server           |
-| `mise run preview`      | Preview the production bundle        |
-| `mise run lint`         | Run ESLint                           |
-| `mise run format:check` | Check formatting                     |
-| `mise run test`         | Run browser-based tests              |
-| `mise run build`        | Build the production bundle          |
-| `mise run ci`           | Run lint, format check, tests, build |
+| Command                 | Description                    |
+| ----------------------- | ------------------------------ |
+| `mise run dev`          | 并行启动前端和 API             |
+| `mise run dev:admin`    | 只启动前端管理台               |
+| `mise run dev:api`      | 只启动 NestJS API              |
+| `mise run lint`         | 运行 workspace lint            |
+| `mise run format:check` | 检查格式                       |
+| `mise run test`         | 运行测试                       |
+| `mise run build`        | 构建前端和 API                 |
+| `mise run ci`           | 运行 lint、format、test、build |
 
-For Clerk auth, copy `.env.example` to `.env` and set `VITE_CLERK_PUBLISHABLE_KEY`.
+## Database
 
-## Sponsoring this project ❤️
+API 使用 Drizzle 管理 PostgreSQL schema。
 
-If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏
+```bash
+pnpm --filter @ztcj/api db:generate
+pnpm --filter @ztcj/api db:migrate
+pnpm --filter @ztcj/api db:seed
+```
 
-For questions or sponsorship inquiries, feel free to reach out at [satnaingdev@gmail.com](mailto:satnaingdev@gmail.com).
+初始化 migration 位于 `apps/api/drizzle/`。
 
-### Current Sponsor
+## API
 
-- [Clerk](https://go.clerk.com/GttUAaK) - authentication and user management for the modern web
+API 全局 prefix 是 `/api`。
 
-## Author
+当前已实现：
 
-Crafted with 🤍 by [@satnaing](https://github.com/satnaing)
+- `GET /api/health`
+- `GET /api/users`
+- `POST /api/users`
+- `PATCH /api/users/:id`
+- `DELETE /api/users/:id`
+- `PATCH /api/users/bulk/status`
+- `DELETE /api/users/bulk`
 
-## License
+## Notes
 
-Licensed under the [MIT License](https://choosealicense.com/licenses/mit/)
+- 前端通过 HTTP API 读写数据，不直接连接数据库。
+- 当前 `users` 表不持久化明文密码；前端表单的 `password` 字段仅为兼容现有 UI 流程。
+- 跨端共享类型暂未抽到 `packages/shared`，等 contract 稳定后再做。
