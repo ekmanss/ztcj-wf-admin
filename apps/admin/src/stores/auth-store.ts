@@ -1,13 +1,22 @@
 import { create } from 'zustand'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
-const ACCESS_TOKEN = 'thisisjustarandomstring'
+const ACCESS_TOKEN = 'ztcj_admin_access_token'
 
-interface AuthUser {
-  accountNo: string
+export interface AuthUser {
+  id: number
+  username: string
+  nickname: string
   email: string
+  mobile: string
+  avatar: string
+  status: string
   role: string[]
-  exp: number
+}
+
+interface AuthSession {
+  token: string
+  user: AuthUser
 }
 
 interface AuthState {
@@ -16,14 +25,26 @@ interface AuthState {
     setUser: (user: AuthUser | null) => void
     accessToken: string
     setAccessToken: (accessToken: string) => void
+    setSession: (session: AuthSession) => void
     resetAccessToken: () => void
     reset: () => void
   }
 }
 
-export const useAuthStore = create<AuthState>()((set) => {
+function readPersistedToken() {
   const cookieState = getCookie(ACCESS_TOKEN)
-  const initToken = cookieState ? JSON.parse(cookieState) : ''
+  if (!cookieState) return ''
+
+  try {
+    const parsedToken = JSON.parse(cookieState) as unknown
+    return typeof parsedToken === 'string' ? parsedToken : ''
+  } catch {
+    return cookieState
+  }
+}
+
+export const useAuthStore = create<AuthState>()((set) => {
+  const initToken = readPersistedToken()
   return {
     auth: {
       user: null,
@@ -34,6 +55,18 @@ export const useAuthStore = create<AuthState>()((set) => {
         set((state) => {
           setCookie(ACCESS_TOKEN, JSON.stringify(accessToken))
           return { ...state, auth: { ...state.auth, accessToken } }
+        }),
+      setSession: (session) =>
+        set((state) => {
+          setCookie(ACCESS_TOKEN, JSON.stringify(session.token))
+          return {
+            ...state,
+            auth: {
+              ...state.auth,
+              user: session.user,
+              accessToken: session.token,
+            },
+          }
         }),
       resetAccessToken: () =>
         set((state) => {

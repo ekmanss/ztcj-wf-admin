@@ -7,10 +7,14 @@ async function importAuthStore() {
 }
 
 const sampleUser = {
-  accountNo: 'ACC-1',
+  id: 1,
+  username: 'admin',
+  nickname: 'Admin',
   email: 'user@example.com',
+  mobile: '13800138000',
+  avatar: '',
+  status: 'normal',
   role: ['user'],
-  exp: 1_700_000_000,
 }
 
 describe('useAuthStore', () => {
@@ -55,6 +59,25 @@ describe('useAuthStore', () => {
     useAuthStore.getState().auth.setUser({ ...sampleUser })
 
     expect(useAuthStore.getState().auth.user).toEqual(sampleUser)
+  })
+
+  it('sets user and token together via setSession', async () => {
+    const useAuthStore = await importAuthStore()
+
+    useAuthStore.getState().auth.setSession({
+      token: 'session-token',
+      user: { ...sampleUser },
+    })
+
+    expect(useAuthStore.getState().auth.user).toEqual(sampleUser)
+    expect(useAuthStore.getState().auth.accessToken).toBe('session-token')
+
+    vi.resetModules()
+    const useAuthStoreAfterReload = await importAuthStore()
+
+    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe(
+      'session-token'
+    )
   })
 
   it('reset clears user and access token and drops persistence', async () => {

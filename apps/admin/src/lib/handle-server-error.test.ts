@@ -51,6 +51,20 @@ describe('handleServerError', () => {
     expect(toastError).toHaveBeenCalledWith('Something went wrong!')
   })
 
+  it('uses Nest-style data.message when data.title is absent', () => {
+    const error = new AxiosError('Unauthorized')
+    error.response = {
+      status: 401,
+      data: { message: 'Username or password is incorrect.' },
+    } as AxiosError['response']
+
+    handleServerError(error)
+
+    expect(toastError).toHaveBeenCalledWith(
+      'Username or password is incorrect.'
+    )
+  })
+
   it('falls back to the generic message when Axios data.title is an empty string', () => {
     const error = new AxiosError('Bad request')
     error.response = {

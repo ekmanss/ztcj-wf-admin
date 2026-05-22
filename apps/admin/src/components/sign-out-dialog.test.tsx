@@ -5,8 +5,15 @@ import { SignOutDialog } from './sign-out-dialog'
 
 const navigate = vi.fn()
 const reset = vi.fn()
+const { logoutSession } = vi.hoisted(() => ({
+  logoutSession: vi.fn(),
+}))
 
 const MOCK_HREF = 'https://app.test/dashboard?tab=1'
+
+vi.mock('@/features/auth/api/auth-api', () => ({
+  logoutSession,
+}))
 
 vi.mock('@/stores/auth-store', () => ({
   useAuthStore: () => ({
@@ -26,15 +33,17 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 describe('SignOutDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    logoutSession.mockResolvedValue(undefined)
   })
 
-  it('calls auth.reset and navigates to sign-in with current location as redirect', async () => {
+  it('logs out remotely, resets local auth, and navigates to sign-in with current location as redirect', async () => {
     const { getByRole } = await render(
       <SignOutDialog open onOpenChange={vi.fn()} />
     )
 
     await userEvent.click(getByRole('button', { name: /^Sign out$/i }))
 
+    expect(logoutSession).toHaveBeenCalledOnce()
     expect(reset).toHaveBeenCalledOnce()
     expect(navigate).toHaveBeenCalledWith({
       to: '/sign-in',
@@ -50,6 +59,7 @@ describe('SignOutDialog', () => {
 
     await userEvent.click(getByRole('button', { name: /^Cancel$/i }))
 
+    expect(logoutSession).not.toHaveBeenCalled()
     expect(reset).not.toHaveBeenCalled()
     expect(navigate).not.toHaveBeenCalled()
   })
