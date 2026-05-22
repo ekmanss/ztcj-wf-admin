@@ -126,6 +126,14 @@ const formSchema = z
       })
     }
 
+    if (values.type === '1' && !values.projectNameEn) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['projectNameEn'],
+        message: '请输入项目英文名称。',
+      })
+    }
+
     if (values.type === '2' && !values.orgName) {
       ctx.addIssue({
         code: 'custom',
@@ -139,6 +147,14 @@ const formSchema = z
         code: 'custom',
         path: ['peopleName'],
         message: '请输入人物名称。',
+      })
+    }
+
+    if (values.type === '3' && !values.peopleNameEn) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['peopleNameEn'],
+        message: '请输入人物英文名称。',
       })
     }
 
@@ -306,6 +322,20 @@ function fieldClassName(className?: string) {
   return cn('space-y-2', className)
 }
 
+function RequiredLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className='inline-flex items-center gap-1.5'>
+      <span>{children}</span>
+      <span
+        className='rounded-sm bg-destructive/10 px-1.5 py-0.5 text-[10px] leading-none font-medium text-destructive'
+        aria-label='必填'
+      >
+        必填
+      </span>
+    </span>
+  )
+}
+
 function applyInvestmentToForm(
   form: UseFormReturn<ParadiseLostForm>,
   option: InvestmentOption
@@ -471,7 +501,7 @@ export function ParadiseLostActionDialog({
           <DialogHeader className='border-b px-6 py-5 text-start'>
             <DialogTitle>{isEdit ? '编辑失乐园' : '新增失乐园'}</DialogTitle>
             <DialogDescription>
-              先选择入选类型和关联对象，再维护该类型的源资料与专题展示信息。
+              先选择入选类型和关联对象，再维护该类型的源资料与专题展示信息。带“必填”标记的字段需要填写。
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -689,7 +719,9 @@ function AssociationSection({
           name='investId'
           render={({ field }) => (
             <FormItem className='space-y-2'>
-              <FormLabel>选择{typeText}</FormLabel>
+              <FormLabel>
+                <RequiredLabel>选择{typeText}</RequiredLabel>
+              </FormLabel>
               <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -698,6 +730,7 @@ function AssociationSection({
                       variant='outline'
                       role='combobox'
                       aria-expanded={pickerOpen}
+                      aria-required='true'
                       className='h-11 w-full justify-between'
                     >
                       <span className='min-w-0 truncate text-start'>
@@ -908,7 +941,9 @@ function TopicFieldsSection({
           render={({ field }) => (
             <FormItem className='space-y-3 md:col-span-2'>
               <div className='flex items-center justify-between gap-2'>
-                <FormLabel>入选年度</FormLabel>
+                <FormLabel>
+                  <RequiredLabel>入选年度</RequiredLabel>
+                </FormLabel>
                 <span className='text-xs text-muted-foreground'>
                   至少选择 1 个
                 </span>
@@ -986,11 +1021,13 @@ function InputField({
   name,
   label,
   type = 'text',
+  required = false,
 }: {
   form: UseFormReturn<ParadiseLostForm>
   name: keyof ParadiseLostForm
   label: string
   type?: string
+  required?: boolean
 }) {
   return (
     <FormField
@@ -998,7 +1035,9 @@ function InputField({
       name={name}
       render={({ field }) => (
         <FormItem className={fieldClassName()}>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel>
+            {required ? <RequiredLabel>{label}</RequiredLabel> : label}
+          </FormLabel>
           <FormControl>
             <Input
               type={type}
@@ -1007,6 +1046,7 @@ function InputField({
               onBlur={field.onBlur}
               name={field.name}
               ref={field.ref}
+              aria-required={required}
               autoComplete='off'
             />
           </FormControl>
@@ -1022,11 +1062,13 @@ function TextAreaField({
   name,
   label,
   rows = 5,
+  required = false,
 }: {
   form: UseFormReturn<ParadiseLostForm>
   name: keyof ParadiseLostForm
   label: string
   rows?: number
+  required?: boolean
 }) {
   return (
     <FormField
@@ -1034,7 +1076,9 @@ function TextAreaField({
       name={name}
       render={({ field }) => (
         <FormItem className={fieldClassName()}>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel>
+            {required ? <RequiredLabel>{label}</RequiredLabel> : label}
+          </FormLabel>
           <FormControl>
             <Textarea
               rows={rows}
@@ -1043,6 +1087,7 @@ function TextAreaField({
               onBlur={field.onBlur}
               name={field.name}
               ref={field.ref}
+              aria-required={required}
             />
           </FormControl>
           <FormMessage />
@@ -1059,8 +1104,18 @@ function ProjectFields({ form }: { form: UseFormReturn<ParadiseLostForm> }) {
       description='选择项目后会自动填充，可在保存时同步回项目源表。'
     >
       <div className='grid gap-4 md:grid-cols-2'>
-        <InputField form={form} name='projectName' label='项目名称（中）' />
-        <InputField form={form} name='projectNameEn' label='项目名称（英）' />
+        <InputField
+          form={form}
+          name='projectName'
+          label='项目名称（中）'
+          required
+        />
+        <InputField
+          form={form}
+          name='projectNameEn'
+          label='项目名称（英）'
+          required
+        />
         <InputField form={form} name='logo' label='项目 LOGO URL' />
         <FormField
           control={form.control}
@@ -1107,7 +1162,12 @@ function OrganizationFields({
       description='选择机构后会自动填充，可在保存时同步回机构源表。'
     >
       <div className='grid gap-4 md:grid-cols-2'>
-        <InputField form={form} name='orgName' label='机构名称（中）' />
+        <InputField
+          form={form}
+          name='orgName'
+          label='机构名称（中）'
+          required
+        />
         <InputField form={form} name='orgNameEn' label='机构名称（英）' />
         <InputField form={form} name='orgLogo' label='机构 LOGO URL' />
         <InputField form={form} name='orgInfo' label='机构简介（中）' />
@@ -1134,8 +1194,18 @@ function PersonFields({ form }: { form: UseFormReturn<ParadiseLostForm> }) {
       description='选择人物后会自动填充，可在保存时同步回人物源表。'
     >
       <div className='grid gap-4 md:grid-cols-2'>
-        <InputField form={form} name='peopleName' label='人物名称（中）' />
-        <InputField form={form} name='peopleNameEn' label='人物名称（英）' />
+        <InputField
+          form={form}
+          name='peopleName'
+          label='人物名称（中）'
+          required
+        />
+        <InputField
+          form={form}
+          name='peopleNameEn'
+          label='人物名称（英）'
+          required
+        />
         <InputField form={form} name='headImg' label='人物头像 URL' />
         <InputField form={form} name='personsOneLiner' label='人物简介（中）' />
         <InputField
@@ -1173,16 +1243,32 @@ function EventFields({
       description='选择事件后会自动填充，事件类型和性质为必选项。'
     >
       <div className='grid gap-4 md:grid-cols-2'>
-        <InputField form={form} name='eventNameCn' label='事件名称（中）' />
-        <InputField form={form} name='eventNameEn' label='事件名称（英）' />
+        <InputField
+          form={form}
+          name='eventNameCn'
+          label='事件名称（中）'
+          required
+        />
+        <InputField
+          form={form}
+          name='eventNameEn'
+          label='事件名称（英）'
+          required
+        />
         <InputField form={form} name='eventImage160' label='事件配图 URL' />
         <FormField
           control={form.control}
           name='eventTypes'
           render={({ field }) => (
             <FormItem className='space-y-3'>
-              <FormLabel>事件类型</FormLabel>
-              <div className='grid gap-2 sm:grid-cols-2'>
+              <FormLabel>
+                <RequiredLabel>事件类型</RequiredLabel>
+              </FormLabel>
+              <div
+                className='grid gap-2 sm:grid-cols-2'
+                role='group'
+                aria-required='true'
+              >
                 {eventTypes.map((type) => (
                   <Label
                     key={type.id}
@@ -1213,8 +1299,14 @@ function EventFields({
           name='eventNatures'
           render={({ field }) => (
             <FormItem className='space-y-3'>
-              <FormLabel>事件性质</FormLabel>
-              <div className='grid gap-2 sm:grid-cols-2'>
+              <FormLabel>
+                <RequiredLabel>事件性质</RequiredLabel>
+              </FormLabel>
+              <div
+                className='grid gap-2 sm:grid-cols-2'
+                role='group'
+                aria-required='true'
+              >
                 {eventNatures.map((nature) => (
                   <Label
                     key={nature.id}
