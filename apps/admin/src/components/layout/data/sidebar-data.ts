@@ -1,5 +1,6 @@
 import {
   Construction,
+  Database,
   LayoutDashboard,
   Monitor,
   Bug,
@@ -95,6 +96,16 @@ export const sidebarData: SidebarData = {
               url: '/clerk/user-management',
             },
           ],
+        },
+      ],
+    },
+    {
+      title: '专题数据',
+      items: [
+        {
+          title: '失乐园',
+          url: '/paradise-lost',
+          icon: Database,
         },
       ],
     },
