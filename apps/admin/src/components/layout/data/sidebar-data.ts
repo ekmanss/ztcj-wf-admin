@@ -24,7 +24,21 @@ import {
   GalleryVerticalEnd,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
-import { type SidebarData } from '../types'
+import { type NavItem, type SidebarData } from '../types'
+
+function getVisibleNavItems(items: NavItem[]): NavItem[] {
+  return items
+    .filter((item) => !item.isTemplate)
+    .map((item) => {
+      if (!item.items) return item
+
+      return {
+        ...item,
+        items: item.items.filter((subItem) => !subItem.isTemplate),
+      }
+    })
+    .filter((item) => !item.items || item.items.length > 0)
+}
 
 export const sidebarData: SidebarData = {
   user: {
@@ -34,45 +48,53 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: 'Shadcn Admin',
+      name: 'Woofun Admin',
       logo: Command,
-      plan: 'Vite + ShadcnUI',
+      plan: 'Dashboard',
     },
+    // 模板 team：保留示例配置，当前 team switcher 暂不展示。
     {
       name: 'Acme Inc',
       logo: GalleryVerticalEnd,
       plan: 'Enterprise',
+      isTemplate: true,
     },
     {
       name: 'Acme Corp.',
       logo: AudioWaveform,
       plan: 'Startup',
+      isTemplate: true,
     },
   ],
   navGroups: [
     {
       title: 'General',
       items: [
+        // 模板页面：保留示例 route，当前前端菜单暂不展示。
         {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
+          isTemplate: true,
         },
         {
           title: 'Tasks',
           url: '/tasks',
           icon: ListTodo,
+          isTemplate: true,
         },
         {
           title: 'Apps',
           url: '/apps',
           icon: Package,
+          isTemplate: true,
         },
         {
           title: 'Chats',
           url: '/chats',
           badge: '3',
           icon: MessagesSquare,
+          isTemplate: true,
         },
         {
           title: 'Users',
@@ -82,6 +104,7 @@ export const sidebarData: SidebarData = {
         {
           title: 'Secured by Clerk',
           icon: ClerkLogo,
+          isTemplate: true,
           items: [
             {
               title: 'Sign In',
@@ -111,6 +134,8 @@ export const sidebarData: SidebarData = {
     },
     {
       title: 'Pages',
+      // 模板页面分组：保留示例 route，当前前端菜单暂不展示。
+      isTemplate: true,
       items: [
         {
           title: 'Auth',
@@ -173,6 +198,8 @@ export const sidebarData: SidebarData = {
     },
     {
       title: 'Other',
+      // 模板页面分组：保留示例 route，当前前端菜单暂不展示。
+      isTemplate: true,
       items: [
         {
           title: 'Settings',
@@ -213,4 +240,16 @@ export const sidebarData: SidebarData = {
       ],
     },
   ],
+}
+
+export const visibleSidebarData: SidebarData = {
+  ...sidebarData,
+  teams: sidebarData.teams.filter((team) => !team.isTemplate),
+  navGroups: sidebarData.navGroups
+    .filter((group) => !group.isTemplate)
+    .map((group) => ({
+      ...group,
+      items: getVisibleNavItems(group.items),
+    }))
+    .filter((group) => group.items.length > 0),
 }

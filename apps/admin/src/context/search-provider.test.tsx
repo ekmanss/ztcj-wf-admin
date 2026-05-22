@@ -73,7 +73,8 @@ describe('SearchProvider and CommandMenu', () => {
     await expect.element(getByText('Light')).toBeInTheDocument()
     await expect.element(getByText('Dark')).toBeInTheDocument()
     await expect.element(getByText('System')).toBeInTheDocument()
-    await expect.element(getByText('Dashboard')).toBeInTheDocument()
+    await expect.element(getByText('Users')).toBeInTheDocument()
+    await expect.element(getByText('Dashboard')).not.toBeInTheDocument()
   })
 
   it('does not show the dialog content when search is closed', async () => {
@@ -109,26 +110,27 @@ describe('SearchProvider and CommandMenu', () => {
 
     await openCommandPalette(screen)
 
-    await userEvent.click(screen.getByText('Tasks'))
+    await userEvent.click(screen.getByText('Users'))
 
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/tasks' })
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/users' })
     await expect
       .element(screen.getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .not.toBeInTheDocument()
   })
 
-  it('navigates for nested sidebar items (group with sub-items)', async () => {
+  it('does not expose template nav items in the command palette', async () => {
     const screen = await renderWithSearchProvider()
-    const { getByPlaceholder, getByRole } = screen
+    const { getByPlaceholder, getByText } = screen
 
     await openCommandPalette(screen)
 
-    await userEvent.click(getByRole('option', { name: 'Settings Account' }))
+    await expect.element(getByText('Tasks')).not.toBeInTheDocument()
+    await expect.element(getByText('Auth')).not.toBeInTheDocument()
+    await expect.element(getByText('Settings')).not.toBeInTheDocument()
 
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/settings/account' })
     await expect
       .element(getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
-      .not.toBeInTheDocument()
+      .toBeInTheDocument()
   })
 
   it('applies theme and closes the palette when a theme command is chosen', async () => {

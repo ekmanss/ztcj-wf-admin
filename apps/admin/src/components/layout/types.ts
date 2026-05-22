@@ -10,12 +10,14 @@ type Team = {
   name: string
   logo: React.ElementType
   plan: string
+  isTemplate?: boolean
 }
 
 type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  isTemplate?: boolean
 }
 
 type NavLink = BaseNavItem & {
@@ -33,6 +35,7 @@ type NavItem = NavCollapsible | NavLink
 type NavGroup = {
   title: string
   items: NavItem[]
+  isTemplate?: boolean
 }
 
 type SidebarData = {
