@@ -27,9 +27,13 @@ PORT=3001
 CORS_ORIGIN=http://localhost:5173
 VITE_API_BASE_URL=http://localhost:3001/api
 VITE_CLERK_PUBLISHABLE_KEY=
+VITE_DEV_AUTH_ENABLED=false
 ```
 
 `apps/admin/.env.example` 保留前端单独运行时需要的 Vite 变量。
+
+`VITE_DEV_AUTH_ENABLED=true` 仅在前端 dev mode 生效，会注入本地预览登录态，方便
+AI/设计开发直接查看受保护页面；不要在正式环境开启。
 
 ## Commands
 

@@ -17,6 +17,8 @@
 - 当前阶段只使用 Bearer token，不使用 cookie session 或跨域 credentials。
 - 受保护 route 进入前，如果本地有 token 但没有 user，需要调用 `GET /api/auth/me` 恢复 session。
 - 退出登录调用 `POST /api/auth/logout`，即使远端失败也要清理本地 session。
+- `VITE_DEV_AUTH_ENABLED=true` 仅在 Vite dev mode 生效，用于 AI/设计开发时注入本地
+  preview session 进入受保护 route；production 不允许绕过认证。
 
 ## UI/UX Rules
 
@@ -30,3 +32,5 @@
 ## Change Notes
 
 - 当前阶段只实现 `sys_user` 登录闭环，不实现注册、找回密码、OAuth 或 RBAC。
+- dev auth 逻辑集中在本 feature 内，route 只调用 helper，避免把 mock session
+  细节散落到 route 文件。
