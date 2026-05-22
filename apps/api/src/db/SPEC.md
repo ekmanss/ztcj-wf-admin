@@ -8,7 +8,7 @@
 
 - 数据库连接、pool token、Drizzle schema 和 DB 类型放在这里。
 - 业务查询、权限判断和 HTTP response shape 不放在这里。
-- 不添加会直接修改数据库结构或数据的 migration runner、seed、批量维护脚本。
+- 不添加 migration generator/runner、seed、批量维护脚本，或任何会直接修改/派生数据库结构与数据的命令。
 
 ## Contracts
 

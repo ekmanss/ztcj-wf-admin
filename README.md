@@ -56,13 +56,7 @@ mise run dev
 
 API 使用 Drizzle 描述 MySQL schema。运行中的 API 会通过 controller/service 执行业务数据 CRUD；仓库不提供绕过业务 API 直接修改数据库的维护脚本，不在本地执行 `db:migrate`、`db:push`、seed、批量 SQL update/delete 这类命令。
 
-如需更新 schema，只生成 SQL 文件供外部数据库变更流程审查和执行：
-
-```bash
-pnpm --filter @ztcj/api db:generate
-```
-
-生成的 migration 位于 `apps/api/drizzle/`。schema 变更的实际执行、备份、回滚和审计由仓库外的数据库流程负责。
+数据库表结构不通过仓库内 migration 修改。`apps/api/docs/database/ddl/` 仅保存外部数据库现状的只读参考 DDL；实际建表、改表、备份、回滚和审计由仓库外数据库流程负责。
 
 ## API
 

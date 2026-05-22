@@ -9,7 +9,7 @@
 
 - 数据库 credential、业务 CRUD、SQL、transaction 和权限相关逻辑必须留在 API。
 - 允许运行中的 API 通过 controller/service 执行业务数据 CRUD。
-- 仓库不提供绕过业务 API 直接改数据库的维护命令；不要添加 `db:migrate`、`db:push`、seed、批量 SQL update/delete 等会直接修改表结构或表数据的脚本。
+- 仓库不提供绕过业务 API 直接改数据库的维护命令；不要添加 migration generate/run、`db:migrate`、`db:push`、seed、批量 SQL update/delete 等会直接修改或派生表结构/表数据的脚本。
 - 前端不得直接连接数据库，也不得保存数据库 credential。
 - 不要在这里放前端 UI 类型；跨端共享 contract 稳定后再考虑 `packages/shared`。
 
@@ -34,5 +34,5 @@
 ## Change Notes
 
 - 初始阶段只实现 `users` 最小 CRUD，不引入通用 CRUD factory 或 shared package。
-- Drizzle 只用于生成 SQL migration 文件；schema 变更的实际执行、备份、回滚和审计必须走仓库外数据库流程。
+- Drizzle 只作为运行时 ORM/schema 描述使用；仓库不维护 migration 生成配置或生成产物。数据库结构变更、备份、回滚和审计必须走仓库外数据库流程。
 - API dev/build 使用本地 `@nestjs/cli` 编译运行；不要用 `tsx` 直接运行 `src/main.ts`。

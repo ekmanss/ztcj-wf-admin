@@ -8,8 +8,7 @@
 ## Boundaries
 
 - 可以保存 `CREATE TABLE`、索引、表注释、字段 comment 等结构定义。
-- 不保存 `INSERT`、`UPDATE`、`DELETE`、seed 数据或任何运行型维护脚本。
-- 不作为 Drizzle migration 输入；Drizzle migration 仍由 `apps/api/src/db/schema.ts` 生成到 `apps/api/drizzle/`。
+- 不保存 `INSERT`、`UPDATE`、`DELETE`、seed 数据、migration 输入或任何运行型维护脚本。
 
 ## Contracts
 

@@ -17,8 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:generate": "drizzle-kit generate"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.22",
@@ -37,7 +36,6 @@
     "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.21",
     "@types/node": "^25.6.0",
-    "drizzle-kit": "^0.31.10",
     "eslint": "^10.2.1",
     "globals": "^17.5.0",
     "typescript": "~6.0.3",

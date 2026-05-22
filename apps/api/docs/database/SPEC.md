@@ -10,8 +10,7 @@
 
 - 可以放置只读参考性质的字段说明、数据 contract 备注和目录索引。
 - 表级 `CREATE TABLE` DDL 放在 `ddl/`，每张表一个 `.sql` 文件。
-- 不放置可直接修改数据库的维护脚本、seed、批量 update/delete 或 migration runner。
-- Drizzle 生成的 migration 仍然只放在 `apps/api/drizzle/`。
+- 不放置可直接修改或派生数据库结构/数据的维护脚本、seed、批量 update/delete、migration generator 或 migration runner。
 
 ## Contracts
 
