@@ -20,6 +20,7 @@
 - 列表和详情返回 `sourceMissing` / `sourceMissingMessage`，用于标记旧专题条目引用的来源对象缺失。
 - 创建和编辑必须验证 `type + investId` 唯一，编辑时排除当前记录。
 - 创建和编辑必须在同一个 transaction 内更新源表和 `coin_aradise_lost`。
+- `/paradise-lost/investments` 支持 `page` / `pageSize` 分页搜索，默认按英文名优先、名称兜底的字母升序返回。
 - 事件源表真实表名是 `sys_events_timeline`，不是旧代码里的未加前缀 `events_timeline`。
 
 ## Testing

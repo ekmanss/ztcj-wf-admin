@@ -731,6 +731,7 @@ export class ParadiseLostService {
         ? buildOr([
             eq(coinProjects.projectId, keyword),
             like(coinProjects.projectName, `%${keyword}%`),
+            like(coinProjects.projectNameEn, `%${keyword}%`),
           ])
         : undefined
 
@@ -749,7 +750,12 @@ export class ParadiseLostService {
           })
           .from(coinProjects)
           .where(where)
-          .orderBy(desc(coinProjects.autoId))
+          .orderBy(
+            asc(
+              sql`lower(coalesce(nullif(${coinProjects.projectNameEn}, ''), nullif(${coinProjects.projectName}, ''), ${coinProjects.projectId}))`
+            ),
+            asc(coinProjects.projectId)
+          )
           .limit(pageSize)
           .offset(offset),
         this.db.select({ total: count() }).from(coinProjects).where(where),
@@ -785,6 +791,7 @@ export class ParadiseLostService {
               ? undefined
               : eq(rootdataOrganizations.orgId, numericKeyword),
             like(rootdataOrganizations.orgName, `%${keyword}%`),
+            like(rootdataOrganizations.orgNameEn, `%${keyword}%`),
           ])
         : undefined
 
@@ -803,7 +810,12 @@ export class ParadiseLostService {
           })
           .from(rootdataOrganizations)
           .where(where)
-          .orderBy(desc(rootdataOrganizations.autoId))
+          .orderBy(
+            asc(
+              sql`lower(coalesce(nullif(${rootdataOrganizations.orgNameEn}, ''), ${rootdataOrganizations.orgName}))`
+            ),
+            asc(rootdataOrganizations.orgId)
+          )
           .limit(pageSize)
           .offset(offset),
         this.db
@@ -838,6 +850,7 @@ export class ParadiseLostService {
         ? buildOr([
             eq(rootdataPersons.id, keyword),
             like(rootdataPersons.peopleName, `%${keyword}%`),
+            like(rootdataPersons.peopleNameEn, `%${keyword}%`),
           ])
         : undefined
 
@@ -855,7 +868,12 @@ export class ParadiseLostService {
           })
           .from(rootdataPersons)
           .where(where)
-          .orderBy(asc(rootdataPersons.id))
+          .orderBy(
+            asc(
+              sql`lower(coalesce(nullif(${rootdataPersons.peopleNameEn}, ''), ${rootdataPersons.peopleName}))`
+            ),
+            asc(rootdataPersons.id)
+          )
           .limit(pageSize)
           .offset(offset),
         this.db.select({ total: count() }).from(rootdataPersons).where(where),
@@ -889,6 +907,7 @@ export class ParadiseLostService {
             ? undefined
             : eq(sysEventsTimeline.eventId, numericKeyword),
           like(sysEventsTimeline.eventNameCn, `%${keyword}%`),
+          like(sysEventsTimeline.eventNameEn, `%${keyword}%`),
         ])
       : undefined
 
@@ -908,7 +927,12 @@ export class ParadiseLostService {
         })
         .from(sysEventsTimeline)
         .where(where)
-        .orderBy(desc(sysEventsTimeline.eventId))
+        .orderBy(
+          asc(
+            sql`lower(coalesce(nullif(${sysEventsTimeline.eventNameEn}, ''), ${sysEventsTimeline.eventNameCn}))`
+          ),
+          asc(sysEventsTimeline.eventId)
+        )
         .limit(pageSize)
         .offset(offset),
       this.db.select({ total: count() }).from(sysEventsTimeline).where(where),

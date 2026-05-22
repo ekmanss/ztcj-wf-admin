@@ -20,7 +20,7 @@
 - `tags`、`year`、`eventTypes`、`eventNatures` 在 UI 中是数组，由 API 转换为旧库逗号字符串。
 - `sourceMissing` 为 true 时表示旧专题条目引用的来源对象缺失，列表和编辑弹窗必须显式提示。
 - 创建/编辑提交完整表单；后端会在 transaction 内同步关联源表和 `coin_aradise_lost`。
-- 关联对象通过 `/paradise-lost/investments` 搜索，选择后把源表字段填入当前表单。
+- 关联对象通过 `/paradise-lost/investments` 分页搜索；默认按名称字母升序，选择器滚动到底部继续加载下一页，选择后把源表字段填入当前表单。
 
 ## UI/UX Rules
 

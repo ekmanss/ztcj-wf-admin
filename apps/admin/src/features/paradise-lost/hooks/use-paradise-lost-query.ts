@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   createParadiseLost,
@@ -31,8 +36,8 @@ export const paradiseLostQueryKeys = {
   years: () => [...paradiseLostQueryKeys.all, 'years'] as const,
   eventTypes: () => [...paradiseLostQueryKeys.all, 'event-types'] as const,
   eventNatures: () => [...paradiseLostQueryKeys.all, 'event-natures'] as const,
-  investments: (params: ListInvestmentOptionsParams) =>
-    [...paradiseLostQueryKeys.all, 'investments', params] as const,
+  investmentPages: (params: Omit<ListInvestmentOptionsParams, 'page'>) =>
+    [...paradiseLostQueryKeys.all, 'investment-pages', params] as const,
 }
 
 function toNumberArray<T extends number>(value: unknown): T[] {
@@ -92,14 +97,20 @@ export function useEventNaturesQuery() {
   })
 }
 
-export function useInvestmentOptionsQuery(
-  params: ListInvestmentOptionsParams,
+export function useInvestmentOptionsInfiniteQuery(
+  params: Omit<ListInvestmentOptionsParams, 'page'>,
   enabled: boolean
 ) {
-  return useQuery({
-    queryKey: paradiseLostQueryKeys.investments(params),
-    queryFn: () => listInvestmentOptions(params),
+  return useInfiniteQuery({
+    queryKey: paradiseLostQueryKeys.investmentPages(params),
+    queryFn: ({ pageParam }) =>
+      listInvestmentOptions({ ...params, page: pageParam }),
     enabled,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const loadedCount = lastPage.page * lastPage.pageSize
+      return loadedCount < lastPage.total ? lastPage.page + 1 : undefined
+    },
   })
 }
 

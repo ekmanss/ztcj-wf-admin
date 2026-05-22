@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode, type UIEvent } from 'react'
 import { z } from 'zod'
 import { useForm, useWatch, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -66,7 +66,7 @@ import {
   useCreateParadiseLostMutation,
   useEventNaturesQuery,
   useEventTypesQuery,
-  useInvestmentOptionsQuery,
+  useInvestmentOptionsInfiniteQuery,
   useParadiseLostTagsQuery,
   useParadiseLostYearsQuery,
   useUpdateParadiseLostMutation,
@@ -449,7 +449,7 @@ export function ParadiseLostActionDialog({
     defaultValues: getDefaultValues(currentRow),
   })
   const type = useWatch({ control: form.control, name: 'type' })
-  const investmentQuery = useInvestmentOptionsQuery(
+  const investmentQuery = useInvestmentOptionsInfiniteQuery(
     {
       type: Number(type) as ParadiseLostUpsertInput['type'],
       q: investmentKeyword.trim() || undefined,
@@ -465,9 +465,10 @@ export function ParadiseLostActionDialog({
   const updateMutation = useUpdateParadiseLostMutation()
   const isSaving = createMutation.isPending || updateMutation.isPending
   const investmentItems = useMemo(
-    () => investmentQuery.data?.items ?? [],
-    [investmentQuery.data?.items]
+    () => investmentQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [investmentQuery.data?.pages]
   )
+  const investmentTotal = investmentQuery.data?.pages[0]?.total ?? 0
 
   const onSubmit = async (values: ParadiseLostForm) => {
     const input = toInput(values)
@@ -535,8 +536,12 @@ export function ParadiseLostActionDialog({
                     keyword={investmentKeyword}
                     onKeywordChange={setInvestmentKeyword}
                     investmentItems={investmentItems}
-                    isFetching={investmentQuery.isFetching}
-                    total={investmentQuery.data?.total ?? 0}
+                    isLoading={investmentQuery.isPending}
+                    isError={investmentQuery.isError}
+                    isFetchingNextPage={investmentQuery.isFetchingNextPage}
+                    hasNextPage={investmentQuery.hasNextPage}
+                    onLoadMore={() => void investmentQuery.fetchNextPage()}
+                    total={investmentTotal}
                   />
 
                   {type === '1' && <ProjectFields form={form} />}
@@ -678,7 +683,11 @@ function AssociationSection({
   keyword,
   onKeywordChange,
   investmentItems,
-  isFetching,
+  isLoading,
+  isError,
+  isFetchingNextPage,
+  hasNextPage,
+  onLoadMore,
   total,
 }: {
   form: UseFormReturn<ParadiseLostForm>
@@ -687,7 +696,11 @@ function AssociationSection({
   keyword: string
   onKeywordChange: (value: string) => void
   investmentItems: InvestmentOption[]
-  isFetching: boolean
+  isLoading: boolean
+  isError: boolean
+  isFetchingNextPage: boolean
+  hasNextPage: boolean
+  onLoadMore: () => void
   total: number
 }) {
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -707,6 +720,15 @@ function AssociationSection({
         }
       : undefined
   const selectedSource = selectedFromItems ?? selectedFromCurrentRow
+  const handleOptionsScroll = (event: UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget
+    const distanceToBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight
+
+    if (distanceToBottom > 64 || !hasNextPage || isFetchingNextPage) return
+
+    onLoadMore()
+  }
 
   return (
     <FormSection
@@ -744,6 +766,7 @@ function AssociationSection({
                 </PopoverTrigger>
                 <PopoverContent
                   align='start'
+                  portalled={false}
                   className='w-100 max-w-[calc(100vw-3rem)] p-0'
                 >
                   <Command shouldFilter={false}>
@@ -752,24 +775,39 @@ function AssociationSection({
                       onValueChange={onKeywordChange}
                       placeholder={`搜索${typeText} ID 或名称`}
                     />
-                    <CommandList className='max-h-80'>
-                      {isFetching && (
+                    <CommandList
+                      className='max-h-80 overscroll-contain'
+                      onScroll={handleOptionsScroll}
+                    >
+                      {isLoading && (
                         <div className='flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground'>
                           <Loader2 className='size-4 animate-spin' />
                           正在加载可选{typeText}...
                         </div>
                       )}
-                      {!isFetching && investmentItems.length === 0 && (
-                        <CommandEmpty>
-                          {keyword.trim()
-                            ? '没有匹配的关联对象。'
-                            : `暂无可选择的${typeText}。`}
-                        </CommandEmpty>
+                      {!isLoading && isError && (
+                        <div className='flex items-start gap-2 px-3 py-3 text-sm text-destructive'>
+                          <AlertTriangle className='mt-0.5 size-4' />
+                          <span>
+                            无法加载可选{typeText}，请确认 API 服务已启动。
+                          </span>
+                        </div>
                       )}
+                      {!isLoading &&
+                        !isError &&
+                        investmentItems.length === 0 && (
+                          <CommandEmpty>
+                            {keyword.trim()
+                              ? '没有匹配的关联对象。'
+                              : `暂无可选择的${typeText}。`}
+                          </CommandEmpty>
+                        )}
                       {investmentItems.length > 0 && (
                         <CommandGroup
                           heading={
-                            keyword.trim() ? '搜索结果' : `最近可选${typeText}`
+                            keyword.trim()
+                              ? '搜索结果'
+                              : `按字母排序的${typeText}`
                           }
                         >
                           {investmentItems.map((item) => (
@@ -807,15 +845,37 @@ function AssociationSection({
                           ))}
                         </CommandGroup>
                       )}
+                      {investmentItems.length > 0 && (
+                        <div className='border-t px-3 py-2 text-xs text-muted-foreground'>
+                          {hasNextPage ? (
+                            <div className='flex items-center gap-2'>
+                              {isFetchingNextPage ? (
+                                <Loader2 className='size-3.5 animate-spin' />
+                              ) : (
+                                <span className='size-1.5 rounded-full bg-muted-foreground/60' />
+                              )}
+                              <span>
+                                {isFetchingNextPage
+                                  ? `正在加载更多${typeText}...`
+                                  : '滚动到底部继续加载'}
+                              </span>
+                            </div>
+                          ) : (
+                            <span>已加载全部 {total} 条</span>
+                          )}
+                        </div>
+                      )}
                     </CommandList>
                   </Command>
                 </PopoverContent>
               </Popover>
               <div className='flex items-center gap-2 text-xs text-muted-foreground'>
                 <Search className='size-3.5' />
-                {keyword.trim()
-                  ? `按“${keyword.trim()}”筛选，找到 ${total} 条`
-                  : `默认展示最近 ${investmentItems.length} 条，可直接选择或输入关键词搜索`}
+                {isError
+                  ? `可选${typeText}加载失败，请确认 API 服务已启动`
+                  : keyword.trim()
+                    ? `按“${keyword.trim()}”筛选，已显示 ${investmentItems.length} / ${total} 条`
+                    : `默认按字母排序，已显示 ${investmentItems.length} / ${total} 条，滚动列表底部会继续加载`}
               </div>
               <FormMessage />
             </FormItem>
