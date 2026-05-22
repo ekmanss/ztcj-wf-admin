@@ -3,7 +3,7 @@
 后台管理台 monorepo，包含：
 
 - `apps/admin`：React、Vite、TanStack Router、TanStack Query 管理台前端。
-- `apps/api`：NestJS、Drizzle ORM、PostgreSQL 后端 API。
+- `apps/api`：NestJS、Drizzle ORM、MySQL 后端 API。
 
 ## Requirements
 
@@ -22,7 +22,7 @@ cp .env.example .env
 关键变量：
 
 ```bash
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/ztcj_wf_admin
+DATABASE_URL=mysql://user:password@localhost:3306/rootdata
 PORT=3001
 CORS_ORIGIN=http://localhost:5173
 VITE_API_BASE_URL=http://localhost:3001/api
@@ -54,15 +54,15 @@ mise run dev
 
 ## Database
 
-API 使用 Drizzle 管理 PostgreSQL schema。
+API 使用 Drizzle 描述 MySQL schema。运行中的 API 会通过 controller/service 执行业务数据 CRUD；仓库不提供绕过业务 API 直接修改数据库的维护脚本，不在本地执行 `db:migrate`、`db:push`、seed、批量 SQL update/delete 这类命令。
+
+如需更新 schema，只生成 SQL 文件供外部数据库变更流程审查和执行：
 
 ```bash
 pnpm --filter @ztcj/api db:generate
-pnpm --filter @ztcj/api db:migrate
-pnpm --filter @ztcj/api db:seed
 ```
 
-初始化 migration 位于 `apps/api/drizzle/`。
+生成的 migration 位于 `apps/api/drizzle/`。schema 变更的实际执行、备份、回滚和审计由仓库外的数据库流程负责。
 
 ## API
 

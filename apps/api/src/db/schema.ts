@@ -1,43 +1,28 @@
 import {
-  pgEnum,
-  pgTable,
-  text,
+  mysqlEnum,
+  mysqlTable,
   timestamp,
   uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core'
+  varchar,
+} from 'drizzle-orm/mysql-core'
 
-export const userStatusEnum = pgEnum('user_status', [
-  'active',
-  'inactive',
-  'invited',
-  'suspended',
-])
-
-export const userRoleEnum = pgEnum('user_role', [
-  'superadmin',
-  'admin',
-  'cashier',
-  'manager',
-])
-
-export const users = pgTable(
+export const users = mysqlTable(
   'users',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    firstName: text('first_name').notNull(),
-    lastName: text('last_name').notNull(),
-    username: text('username').notNull(),
-    email: text('email').notNull(),
-    phoneNumber: text('phone_number').notNull(),
-    status: userStatusEnum('status').notNull().default('invited'),
-    role: userRoleEnum('role').notNull().default('cashier'),
-    createdAt: timestamp('created_at', { withTimezone: true })
+    id: varchar('id', { length: 36 }).primaryKey(),
+    firstName: varchar('first_name', { length: 120 }).notNull(),
+    lastName: varchar('last_name', { length: 120 }).notNull(),
+    username: varchar('username', { length: 120 }).notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    phoneNumber: varchar('phone_number', { length: 64 }).notNull(),
+    status: mysqlEnum('status', ['active', 'inactive', 'invited', 'suspended'])
       .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .default('invited'),
+    role: mysqlEnum('role', ['superadmin', 'admin', 'cashier', 'manager'])
       .notNull()
-      .defaultNow(),
+      .default('cashier'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('users_username_unique').on(table.username),

@@ -3,11 +3,13 @@
 ## Purpose
 
 - `apps/api` 是配套后台 API，负责数据库连接、数据读写、业务校验和 HTTP contract。
-- 当前实现使用 NestJS、Drizzle ORM 和 PostgreSQL。
+- 当前实现使用 NestJS、Drizzle ORM 和 MySQL。
 
 ## Boundaries
 
-- 数据库 credential、SQL、migration、transaction 和权限相关逻辑必须留在 API。
+- 数据库 credential、业务 CRUD、SQL、transaction 和权限相关逻辑必须留在 API。
+- 允许运行中的 API 通过 controller/service 执行业务数据 CRUD。
+- 仓库不提供绕过业务 API 直接改数据库的维护命令；不要添加 `db:migrate`、`db:push`、seed、批量 SQL update/delete 等会直接修改表结构或表数据的脚本。
 - 前端不得直接连接数据库，也不得保存数据库 credential。
 - 不要在这里放前端 UI 类型；跨端共享 contract 稳定后再考虑 `packages/shared`。
 
@@ -28,4 +30,4 @@
 ## Change Notes
 
 - 初始阶段只实现 `users` 最小 CRUD，不引入通用 CRUD factory 或 shared package。
-- migration 由 Drizzle 管理，生产环境执行前必须确认备份和回滚方案。
+- Drizzle 只用于生成 SQL migration 文件；schema 变更的实际执行、备份、回滚和审计必须走仓库外数据库流程。

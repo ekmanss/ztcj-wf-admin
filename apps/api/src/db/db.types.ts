@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { MySql2Database } from 'drizzle-orm/mysql2'
 import type * as schema from './schema'
 
-export type DbClient = NodePgDatabase<typeof schema>
+export type DbClient = MySql2Database<typeof schema>

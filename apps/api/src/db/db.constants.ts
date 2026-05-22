@@ -1,2 +1,2 @@
-export const PG_POOL = Symbol('PG_POOL')
+export const DB_POOL = Symbol('DB_POOL')
 export const DB = Symbol('DB')
