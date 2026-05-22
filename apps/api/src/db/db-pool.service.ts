@@ -1,4 +1,4 @@
-import { Injectable, type OnApplicationShutdown } from '@nestjs/common'
+import { Inject, Injectable, type OnApplicationShutdown } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import mysql, { type Pool } from 'mysql2/promise'
 
@@ -6,7 +6,7 @@ import mysql, { type Pool } from 'mysql2/promise'
 export class DbPoolService implements OnApplicationShutdown {
   private readonly pool: Pool
 
-  constructor(config: ConfigService) {
+  constructor(@Inject(ConfigService) config: ConfigService) {
     const connectionString = config.get<string>('DATABASE_URL')
 
     if (!connectionString) {
