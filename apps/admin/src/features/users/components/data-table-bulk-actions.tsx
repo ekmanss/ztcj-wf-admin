@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
-import { Trash2, UserX, UserCheck, Mail } from 'lucide-react'
+import { Eye, EyeOff, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -43,18 +43,18 @@ export function DataTableBulkActions<TData>({
             <Button
               variant='outline'
               size='icon'
-              onClick={() => handleBulkStatusChange('invited')}
+              onClick={() => handleBulkStatusChange('normal')}
               disabled={isBulkUpdating}
               className='size-8'
-              aria-label='Invite selected users'
-              title='Invite selected users'
+              aria-label='设置为正常'
+              title='设置为正常'
             >
-              <Mail />
-              <span className='sr-only'>Invite selected users</span>
+              <Eye />
+              <span className='sr-only'>设置为正常</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Invite selected users</p>
+            <p>设置为正常</p>
           </TooltipContent>
         </Tooltip>
 
@@ -63,38 +63,18 @@ export function DataTableBulkActions<TData>({
             <Button
               variant='outline'
               size='icon'
-              onClick={() => handleBulkStatusChange('active')}
+              onClick={() => handleBulkStatusChange('hidden')}
               disabled={isBulkUpdating}
               className='size-8'
-              aria-label='Activate selected users'
-              title='Activate selected users'
+              aria-label='设置为隐藏'
+              title='设置为隐藏'
             >
-              <UserCheck />
-              <span className='sr-only'>Activate selected users</span>
+              <EyeOff />
+              <span className='sr-only'>设置为隐藏</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Activate selected users</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant='outline'
-              size='icon'
-              onClick={() => handleBulkStatusChange('inactive')}
-              disabled={isBulkUpdating}
-              className='size-8'
-              aria-label='Deactivate selected users'
-              title='Deactivate selected users'
-            >
-              <UserX />
-              <span className='sr-only'>Deactivate selected users</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Deactivate selected users</p>
+            <p>设置为隐藏</p>
           </TooltipContent>
         </Tooltip>
 
@@ -106,15 +86,15 @@ export function DataTableBulkActions<TData>({
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isBulkUpdating}
               className='size-8'
-              aria-label='Delete selected users'
-              title='Delete selected users'
+              aria-label='删除所选用户'
+              title='删除所选用户'
             >
               <Trash2 />
-              <span className='sr-only'>Delete selected users</span>
+              <span className='sr-only'>删除所选用户</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Delete selected users</p>
+            <p>删除所选用户</p>
           </TooltipContent>
         </Tooltip>
       </BulkActionsToolbar>

@@ -1,12 +1,21 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { callTypes, roles } from '../data/data'
+import { callTypes, statusLabels } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
+
+function formatUnixTime(value: number | null) {
+  if (!value) return '-'
+
+  return new Date(value * 1000).toLocaleString('zh-CN', {
+    hour12: false,
+  })
+}
 
 export const usersColumns: ColumnDef<User>[] = [
   {
@@ -18,7 +27,7 @@ export const usersColumns: ColumnDef<User>[] = [
           (table.getIsSomePageRowsSelected() && 'indeterminate')
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
+        aria-label='全选'
         className='translate-y-0.5'
       />
     ),
@@ -29,7 +38,7 @@ export const usersColumns: ColumnDef<User>[] = [
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Select row'
+        aria-label='选择行'
         className='translate-y-0.5'
       />
     ),
@@ -37,12 +46,25 @@ export const usersColumns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'username',
+    accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Username' />
+      <DataTableColumnHeader column={column} title='ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36 ps-3'>{row.getValue('username')}</LongText>
+      <span className='ps-2 tabular-nums'>{row.original.id}</span>
+    ),
+    meta: {
+      className: 'w-20',
+    },
+    enableHiding: false,
+  },
+  {
+    accessorKey: 'username',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='用户名' />
+    ),
+    cell: ({ row }) => (
+      <LongText className='max-w-36 ps-3'>{row.original.username}</LongText>
     ),
     meta: {
       className: cn(
@@ -53,48 +75,138 @@ export const usersColumns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
-    id: 'fullName',
+    accessorKey: 'nickname',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='昵称' />
     ),
-    cell: ({ row }) => {
-      const { firstName, lastName } = row.original
-      const fullName = `${firstName} ${lastName}`
-      return <LongText className='max-w-36'>{fullName}</LongText>
-    },
-    meta: { className: 'w-36' },
+    cell: ({ row }) => (
+      <LongText className='max-w-36'>{row.original.nickname}</LongText>
+    ),
+  },
+  {
+    accessorKey: 'groupName',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='组别' />
+    ),
+    cell: ({ row }) => (
+      <LongText className='max-w-32'>
+        {row.original.groupName || `#${row.original.groupId}`}
+      </LongText>
+    ),
+    enableSorting: false,
   },
   {
     accessorKey: 'email',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Email' />
+      <DataTableColumnHeader column={column} title='电子邮箱' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit ps-2 text-nowrap'>{row.getValue('email')}</div>
+      <LongText className='max-w-52'>{row.original.email}</LongText>
+    ),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'mobile',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='手机号' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-nowrap'>{row.original.mobile || '-'}</span>
+    ),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'avatar',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='头像' />
+    ),
+    cell: ({ row }) => (
+      <Avatar className='size-8'>
+        <AvatarImage
+          src={row.original.avatar || undefined}
+          alt={row.original.nickname}
+        />
+        <AvatarFallback>
+          {row.original.nickname.slice(0, 1) ||
+            row.original.username.slice(0, 1)}
+        </AvatarFallback>
+      </Avatar>
+    ),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'level',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='等级' />
+    ),
+    cell: ({ row }) => (
+      <span className='tabular-nums'>{row.original.level}</span>
     ),
   },
   {
-    accessorKey: 'phoneNumber',
+    accessorKey: 'score',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Phone Number' />
+      <DataTableColumnHeader column={column} title='积分' />
     ),
-    cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
+    cell: ({ row }) => (
+      <span className='tabular-nums'>{row.original.score}</span>
+    ),
+  },
+  {
+    accessorKey: 'loginTime',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='登录时间' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-nowrap'>
+        {formatUnixTime(row.original.loginTime)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'loginIp',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='登录 IP' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-nowrap'>{row.original.loginIp || '-'}</span>
+    ),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'joinTime',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='加入时间' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-nowrap'>
+        {formatUnixTime(row.original.joinTime)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'joinIp',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='加入 IP' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-nowrap'>{row.original.joinIp || '-'}</span>
+    ),
     enableSorting: false,
   },
   {
     accessorKey: 'status',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Status' />
+      <DataTableColumnHeader column={column} title='状态' />
     ),
     cell: ({ row }) => {
-      const { status } = row.original
+      const status = row.original.status
       const badgeColor = callTypes.get(status)
+
       return (
-        <div className='flex space-x-2'>
-          <Badge variant='outline' className={cn('capitalize', badgeColor)}>
-            {row.getValue('status')}
-          </Badge>
-        </div>
+        <Badge variant='outline' className={cn(badgeColor)}>
+          {statusLabels[status]}
+        </Badge>
       )
     },
     filterFn: (row, id, value) => {
@@ -102,34 +214,6 @@ export const usersColumns: ColumnDef<User>[] = [
     },
     enableHiding: false,
     enableSorting: false,
-  },
-  {
-    accessorKey: 'role',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Role' />
-    ),
-    cell: ({ row }) => {
-      const { role } = row.original
-      const userType = roles.find(({ value }) => value === role)
-
-      if (!userType) {
-        return null
-      }
-
-      return (
-        <div className='flex items-center gap-x-2'>
-          {userType.icon && (
-            <userType.icon size={16} className='text-muted-foreground' />
-          )}
-          <span className='text-sm capitalize'>{row.getValue('role')}</span>
-        </div>
-      )
-    },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
-    enableSorting: false,
-    enableHiding: false,
   },
   {
     id: 'actions',

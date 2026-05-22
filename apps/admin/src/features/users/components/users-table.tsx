@@ -22,7 +22,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
@@ -69,8 +68,10 @@ export function UsersTable({
     columnFilters: [
       // username per-column text filter
       { columnId: 'username', searchKey: 'username', type: 'string' },
+      { columnId: 'nickname', searchKey: 'nickname', type: 'string' },
+      { columnId: 'email', searchKey: 'email', type: 'string' },
+      { columnId: 'mobile', searchKey: 'mobile', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: 'role', searchKey: 'role', type: 'array' },
     ],
   })
 
@@ -115,23 +116,16 @@ export function UsersTable({
     >
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Filter users...'
+        searchPlaceholder='按用户名筛选...'
         searchKey='username'
         filters={[
           {
             columnId: 'status',
-            title: 'Status',
+            title: '状态',
             options: [
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
-              { label: 'Invited', value: 'invited' },
-              { label: 'Suspended', value: 'suspended' },
+              { label: '正常', value: 'normal' },
+              { label: '隐藏', value: 'hidden' },
             ],
-          },
-          {
-            columnId: 'role',
-            title: 'Role',
-            options: roles.map((role) => ({ ...role })),
           },
         ]}
       />
@@ -170,7 +164,7 @@ export function UsersTable({
                   colSpan={columns.length}
                   className='h-24 text-center'
                 >
-                  Loading users...
+                  正在加载用户...
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -203,7 +197,7 @@ export function UsersTable({
                   colSpan={columns.length}
                   className='h-24 text-center'
                 >
-                  No results.
+                  没有结果。
                 </TableCell>
               </TableRow>
             )}

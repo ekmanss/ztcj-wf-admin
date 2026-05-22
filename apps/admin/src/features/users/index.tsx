@@ -31,18 +31,18 @@ export function Users() {
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
-            <h2 className='text-2xl font-bold tracking-tight'>User List</h2>
+            <h2 className='text-2xl font-bold tracking-tight'>用户管理</h2>
             <p className='text-muted-foreground'>
-              Manage your users and their roles here.
+              管理旧库会员资料、状态和用户组。
             </p>
           </div>
           <UsersPrimaryButtons />
         </div>
         {usersQuery.isError && (
           <Alert variant='destructive'>
-            <AlertTitle>Unable to load users</AlertTitle>
+            <AlertTitle>无法加载用户</AlertTitle>
             <AlertDescription>
-              Check that the API server is running and DATABASE_URL is valid.
+              请确认 API 服务已启动，且 DATABASE_URL 指向可用数据库。
             </AlertDescription>
           </Alert>
         )}

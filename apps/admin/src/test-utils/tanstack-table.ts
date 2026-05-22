@@ -7,7 +7,7 @@ import { vi } from 'vitest'
  */
 export function createTableMock(rowCount = 2) {
   const rows = Array.from({ length: rowCount }, (_, index) => ({
-    original: { id: `user-${index + 1}` },
+    original: { id: index + 1 },
   }))
   const resetRowSelection = vi.fn()
   const table = {

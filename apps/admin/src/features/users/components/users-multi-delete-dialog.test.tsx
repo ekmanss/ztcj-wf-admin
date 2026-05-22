@@ -31,15 +31,13 @@ describe('UsersMultiDeleteDialog', () => {
 
     const title = getByRole('heading', {
       level: 2,
-      name: /Delete 2 users/i,
+      name: /删除 2 个用户/i,
     })
-    const desc = getByText(
-      new RegExp(`Are you sure you want to delete the selected users?`, 'i')
-    )
+    const desc = getByText(/确定要删除所选用户吗/i)
     const confirmDeleteInput = getByRole('textbox', {
-      name: /Confirm by typing "DELETE"/i,
+      name: /输入 "DELETE" 确认/i,
     })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(title).toBeInTheDocument()
     await expect.element(desc).toBeInTheDocument()
@@ -55,9 +53,9 @@ describe('UsersMultiDeleteDialog', () => {
     )
 
     const confirmDeleteInput = getByRole('textbox', {
-      name: /Confirm by typing "DELETE"/i,
+      name: /输入 "DELETE" 确认/i,
     })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(deleteButton).toBeDisabled()
 
@@ -106,7 +104,7 @@ describe('UsersMultiDeleteDialog', () => {
     const { getByRole } = await render(<Harness />)
 
     const confirmDeleteInput = getByRole('textbox', {
-      name: /Confirm by typing "DELETE"/i,
+      name: /输入 "DELETE" 确认/i,
     })
     await userEvent.fill(confirmDeleteInput, 'DELETE')
     await expect.element(confirmDeleteInput).toHaveValue('DELETE')
@@ -127,9 +125,9 @@ describe('UsersMultiDeleteDialog', () => {
     )
 
     const confirmDeleteInput = getByRole('textbox', {
-      name: /Confirm by typing "DELETE"/i,
+      name: /输入 "DELETE" 确认/i,
     })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(deleteButton).toBeDisabled()
 
@@ -153,9 +151,9 @@ describe('UsersMultiDeleteDialog', () => {
     )
 
     const confirmDeleteInput = getByRole('textbox', {
-      name: /Confirm by typing "DELETE"/i,
+      name: /输入 "DELETE" 确认/i,
     })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(deleteButton).toBeDisabled()
 

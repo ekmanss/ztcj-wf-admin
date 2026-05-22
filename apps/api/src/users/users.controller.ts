@@ -4,7 +4,7 @@ import {
   Delete,
   Get,
   Param,
-  ParseUUIDPipe,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -32,6 +32,11 @@ export class UsersController {
     return this.usersService.create(dto)
   }
 
+  @Get('groups')
+  listGroups() {
+    return this.usersService.listGroups()
+  }
+
   @Patch('bulk/status')
   updateManyStatus(@Body() dto: BulkUpdateUserStatusDto) {
     return this.usersService.updateManyStatus(dto.ids, dto.status)
@@ -43,12 +48,12 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto)
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseUUIDPipe) id: string) {
+  delete(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.delete(id)
   }
 }

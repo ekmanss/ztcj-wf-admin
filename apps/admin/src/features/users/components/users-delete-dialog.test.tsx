@@ -17,16 +17,32 @@ vi.mock('../hooks/use-users-query', () => ({
 }))
 
 const MOCK_USER: User = {
-  id: 'user-delete-test',
-  firstName: 'John',
-  lastName: 'Doe',
+  id: 12,
+  groupId: 1,
+  groupName: '默认组',
   username: 'john_doe',
+  nickname: 'John',
   email: 'johndoe@shadcn-admin.com',
-  phoneNumber: '+959123456789',
-  status: 'active',
-  role: 'manager',
-  createdAt: new Date('2026-01-01'),
-  updatedAt: new Date('2026-02-02'),
+  mobile: '13800138000',
+  avatar: '',
+  level: 0,
+  gender: 0,
+  birthday: null,
+  bio: '',
+  money: '0.00',
+  score: 0,
+  successions: 1,
+  maxSuccessions: 1,
+  prevTime: null,
+  loginTime: null,
+  loginIp: '',
+  loginFailure: 0,
+  loginFailureTime: null,
+  joinIp: '',
+  joinTime: null,
+  createTime: null,
+  updateTime: null,
+  status: 'normal',
 }
 
 describe('UsersDeleteDialog', () => {
@@ -42,14 +58,14 @@ describe('UsersDeleteDialog', () => {
 
     const title = getByRole('heading', {
       level: 2,
-      name: /Delete User/i,
+      name: /删除用户/i,
     })
     const desc = getByText(
-      new RegExp(`Are you sure you want to delete ${MOCK_USER.username}?`, 'i')
+      new RegExp(`确定要删除用户 ${MOCK_USER.username}`, 'i')
     )
-    const usernameInput = getByRole('textbox', { name: /Username/i })
+    const usernameInput = getByRole('textbox', { name: /用户名/i })
     const cancelButton = getByRole('button', { name: /Cancel/i })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(title).toBeInTheDocument()
     await expect.element(desc).toBeInTheDocument()
@@ -64,8 +80,8 @@ describe('UsersDeleteDialog', () => {
       <UsersDeleteDialog open onOpenChange={vi.fn()} currentRow={MOCK_USER} />
     )
 
-    const usernameInput = getByRole('textbox', { name: /Username/i })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const usernameInput = getByRole('textbox', { name: /用户名/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(deleteButton).toBeDisabled()
 
@@ -114,7 +130,7 @@ describe('UsersDeleteDialog', () => {
 
     const { getByRole } = await render(<Harness />)
 
-    const usernameInput = getByRole('textbox', { name: /Username/i })
+    const usernameInput = getByRole('textbox', { name: /用户名/i })
     await userEvent.fill(usernameInput, MOCK_USER.username)
     await expect.element(usernameInput).toHaveValue(MOCK_USER.username)
 
@@ -136,8 +152,8 @@ describe('UsersDeleteDialog', () => {
       />
     )
 
-    const usernameInput = getByRole('textbox', { name: /Username/i })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const usernameInput = getByRole('textbox', { name: /用户名/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(deleteButton).toBeDisabled()
 
@@ -164,8 +180,8 @@ describe('UsersDeleteDialog', () => {
       />
     )
 
-    const usernameInput = getByRole('textbox', { name: /Username/i })
-    const deleteButton = getByRole('button', { name: /Delete/i })
+    const usernameInput = getByRole('textbox', { name: /用户名/i })
+    const deleteButton = getByRole('button', { name: /删除/i })
 
     await expect.element(deleteButton).toBeDisabled()
 

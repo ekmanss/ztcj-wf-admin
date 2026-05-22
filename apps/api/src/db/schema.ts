@@ -6,38 +6,11 @@ import {
   int,
   mysqlEnum,
   mysqlTable,
-  timestamp,
+  text,
   tinyint,
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/mysql-core'
-
-export const users = mysqlTable(
-  'users',
-  {
-    id: varchar('id', { length: 36 }).primaryKey(),
-    firstName: varchar('first_name', { length: 120 }).notNull(),
-    lastName: varchar('last_name', { length: 120 }).notNull(),
-    username: varchar('username', { length: 120 }).notNull(),
-    email: varchar('email', { length: 255 }).notNull(),
-    phoneNumber: varchar('phone_number', { length: 64 }).notNull(),
-    status: mysqlEnum('status', ['active', 'inactive', 'invited', 'suspended'])
-      .notNull()
-      .default('invited'),
-    role: mysqlEnum('role', ['superadmin', 'admin', 'cashier', 'manager'])
-      .notNull()
-      .default('cashier'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex('users_username_unique').on(table.username),
-    uniqueIndex('users_email_unique').on(table.email),
-  ]
-)
-
-export type UserRow = typeof users.$inferSelect
-export type NewUserRow = typeof users.$inferInsert
 
 export const sysUsers = mysqlTable(
   'sys_user',
@@ -53,7 +26,7 @@ export const sysUsers = mysqlTable(
     avatar: varchar('avatar', { length: 255 }).default(''),
     level: tinyint('level', { unsigned: true }).notNull().default(0),
     gender: tinyint('gender', { unsigned: true }).notNull().default(0),
-    birthday: date('birthday'),
+    birthday: date('birthday', { mode: 'string' }),
     bio: varchar('bio', { length: 100 }).default(''),
     money: decimal('money', { precision: 10, scale: 2 })
       .notNull()
@@ -86,6 +59,17 @@ export const sysUsers = mysqlTable(
 )
 
 export type SysUserRow = typeof sysUsers.$inferSelect
+
+export const sysUserGroups = mysqlTable('sys_user_group', {
+  id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+  name: varchar('name', { length: 50 }).default(''),
+  rules: text('rules'),
+  createTime: bigint('createtime', { mode: 'number' }),
+  updateTime: bigint('updatetime', { mode: 'number' }),
+  status: mysqlEnum('status', ['normal', 'hidden']),
+})
+
+export type SysUserGroupRow = typeof sysUserGroups.$inferSelect
 
 export const sysAdmins = mysqlTable(
   'sys_admin',

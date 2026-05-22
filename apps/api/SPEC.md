@@ -22,7 +22,8 @@
 - `CORS_ORIGIN` 未配置时允许所有 origin，配置时使用逗号分隔的 allowlist。
 - `/api/health` 是 readiness endpoint，必须验证数据库可查询；数据库不可用时返回 503。
 - `users` API 返回 camelCase JSON，字段对齐管理台 `User` shape。
-- 用户密码不得以明文写入当前 `users` 表；传入的 `password` 只为兼容前端表单，当前不会持久化。
+- `users` API 面向旧库 `sys_user`，`id` 是 number，状态使用 `normal` / `hidden`。
+- 用户密码不得明文写入；传入的 `password` 需要按旧版 FastAdmin `md5(md5(password)+salt)` 写入 `sys_user.password` 和 `sys_user.salt`。
 
 ## Testing
 
@@ -33,6 +34,6 @@
 
 ## Change Notes
 
-- 初始阶段只实现 `users` 最小 CRUD，不引入通用 CRUD factory 或 shared package。
+- 当前阶段只实现旧库 `sys_user` / `sys_user_group` 的最小 CRUD，不引入通用 CRUD factory 或 shared package。
 - Drizzle 只作为运行时 ORM/schema 描述使用；仓库不维护 migration 生成配置或生成产物。数据库结构变更、备份、回滚和审计必须走仓库外数据库流程。
 - API dev/build 使用本地 `@nestjs/cli` 编译运行；不要用 `tsx` 直接运行 `src/main.ts`。
