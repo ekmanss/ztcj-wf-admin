@@ -18,6 +18,7 @@
 - 密码校验兼容旧版 FastAdmin：`md5(md5(password) + salt)`。
 - 只有 `status = "normal"` 的 `sys_admin` 可以登录。
 - token 存在 `sys_admin.token`，当前阶段是单管理员单 active session；重新登录会覆盖旧 token。
+- 当前阶段 token 通过 Bearer header 传递，不使用 cookie session。
 - `GET /api/auth/me` 和 `POST /api/auth/logout` 从 `Authorization: Bearer <token>` 读取 token，同时兼容 `token` header。
 
 ## Testing

@@ -14,6 +14,7 @@
 ## Contracts
 
 - API base URL 由 `VITE_API_BASE_URL` 提供，默认指向 `http://localhost:3001/api`。
+- 管理台 API 请求使用 `Authorization: Bearer <token>`，不发送跨域 cookie credentials。
 - 远端数据进入 UI 前应通过 schema 校验或显式转换，避免让未知响应直接进入表格。
 
 ## Testing

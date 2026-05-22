@@ -14,6 +14,7 @@
 
 - 登录表单提交 `{ account, password }` 到 `POST /api/auth/login`。
 - 登录成功后保存 `token`，并把 API 返回的 `user` 写入 `auth-store`。
+- 当前阶段只使用 Bearer token，不使用 cookie session 或跨域 credentials。
 - 受保护 route 进入前，如果本地有 token 但没有 user，需要调用 `GET /api/auth/me` 恢复 session。
 - 退出登录调用 `POST /api/auth/logout`，即使远端失败也要清理本地 session。
 

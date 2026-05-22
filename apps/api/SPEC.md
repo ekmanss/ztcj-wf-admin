@@ -17,6 +17,10 @@
 
 - API 全局 prefix 是 `/api`。
 - 数据库连接通过 `DATABASE_URL` 提供，缺失时 API fail fast。
+- 启动配置必须校验 `DATABASE_URL` 和 `PORT`；`CORS_ORIGIN` 可选。
+- 当前阶段使用 Bearer token，不使用 cookie session；CORS 不启用 credentials。
+- `CORS_ORIGIN` 未配置时允许所有 origin，配置时使用逗号分隔的 allowlist。
+- `/api/health` 是 readiness endpoint，必须验证数据库可查询；数据库不可用时返回 503。
 - `users` API 返回 camelCase JSON，字段对齐管理台 `User` shape。
 - 用户密码不得以明文写入当前 `users` 表；传入的 `password` 只为兼容前端表单，当前不会持久化。
 
