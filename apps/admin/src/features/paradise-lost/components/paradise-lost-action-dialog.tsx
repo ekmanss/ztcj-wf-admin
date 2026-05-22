@@ -1242,109 +1242,123 @@ function EventFields({
       title='事件资料'
       description='选择事件后会自动填充，事件类型和性质为必选项。'
     >
-      <div className='grid gap-4 md:grid-cols-2'>
-        <InputField
-          form={form}
-          name='eventNameCn'
-          label='事件名称（中）'
-          required
-        />
-        <InputField
-          form={form}
-          name='eventNameEn'
-          label='事件名称（英）'
-          required
-        />
+      <div className='grid gap-4'>
+        <div className='grid gap-4 md:grid-cols-2'>
+          <InputField
+            form={form}
+            name='eventNameCn'
+            label='事件名称（中）'
+            required
+          />
+          <InputField
+            form={form}
+            name='eventNameEn'
+            label='事件名称（英）'
+            required
+          />
+        </div>
         <InputField form={form} name='eventImage160' label='事件配图 URL' />
-        <FormField
-          control={form.control}
+        <EventChecklistField
+          form={form}
           name='eventTypes'
-          render={({ field }) => (
-            <FormItem className='space-y-3'>
-              <FormLabel>
-                <RequiredLabel>事件类型</RequiredLabel>
-              </FormLabel>
-              <div
-                className='grid gap-2 sm:grid-cols-2'
-                role='group'
-                aria-required='true'
-              >
-                {eventTypes.map((type) => (
-                  <Label
-                    key={type.id}
-                    className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60'
-                  >
-                    <Checkbox
-                      checked={field.value.includes(String(type.id))}
-                      onCheckedChange={(checked) =>
-                        field.onChange(
-                          toggleValue(
-                            field.value,
-                            String(type.id),
-                            checked === true
-                          )
-                        )
-                      }
-                    />
-                    <span className='truncate'>{type.name}</span>
-                  </Label>
-                ))}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='事件类型'
+          options={eventTypes}
         />
-        <FormField
-          control={form.control}
+        <EventChecklistField
+          form={form}
           name='eventNatures'
-          render={({ field }) => (
-            <FormItem className='space-y-3'>
-              <FormLabel>
-                <RequiredLabel>事件性质</RequiredLabel>
-              </FormLabel>
-              <div
-                className='grid gap-2 sm:grid-cols-2'
-                role='group'
-                aria-required='true'
-              >
-                {eventNatures.map((nature) => (
-                  <Label
-                    key={nature.id}
-                    className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60'
-                  >
-                    <Checkbox
-                      checked={field.value.includes(String(nature.id))}
-                      onCheckedChange={(checked) =>
-                        field.onChange(
-                          toggleValue(
-                            field.value,
-                            String(nature.id),
-                            checked === true
-                          )
-                        )
-                      }
-                    />
-                    <span className='truncate'>{nature.name}</span>
-                  </Label>
-                ))}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='事件性质'
+          options={eventNatures}
         />
-        <InputField form={form} name='eventSummaryCn' label='事件简介（中）' />
-        <InputField form={form} name='eventSummaryEn' label='事件简介（英）' />
-        <TextAreaField
-          form={form}
-          name='eventIntroductionCn'
-          label='事件介绍（中）'
-        />
-        <TextAreaField
-          form={form}
-          name='eventIntroductionEn'
-          label='事件介绍（英）'
-        />
+        <div className='grid gap-4 md:grid-cols-2'>
+          <InputField
+            form={form}
+            name='eventSummaryCn'
+            label='事件简介（中）'
+          />
+          <InputField
+            form={form}
+            name='eventSummaryEn'
+            label='事件简介（英）'
+          />
+        </div>
+        <div className='grid gap-4 md:grid-cols-2'>
+          <TextAreaField
+            form={form}
+            name='eventIntroductionCn'
+            label='事件介绍（中）'
+          />
+          <TextAreaField
+            form={form}
+            name='eventIntroductionEn'
+            label='事件介绍（英）'
+          />
+        </div>
       </div>
     </FormSection>
+  )
+}
+
+function EventChecklistField({
+  form,
+  name,
+  label,
+  options,
+}: {
+  form: UseFormReturn<ParadiseLostForm>
+  name: 'eventTypes' | 'eventNatures'
+  label: string
+  options: { id: number; name: string }[]
+}) {
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className='space-y-3'>
+          <div className='flex items-center justify-between gap-2'>
+            <FormLabel>
+              <RequiredLabel>{label}</RequiredLabel>
+            </FormLabel>
+            <span className='text-xs text-muted-foreground'>
+              已选 {field.value.length} 个
+            </span>
+          </div>
+          {options.length === 0 ? (
+            <div className='rounded-md border border-dashed bg-muted/20 px-3 py-3 text-sm text-muted-foreground'>
+              暂无可选{label}。
+            </div>
+          ) : (
+            <div
+              className='grid gap-2 sm:grid-cols-2 lg:grid-cols-3'
+              role='group'
+              aria-required='true'
+            >
+              {options.map((option) => (
+                <Label
+                  key={option.id}
+                  className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60 active:scale-[0.99]'
+                >
+                  <Checkbox
+                    checked={field.value.includes(String(option.id))}
+                    onCheckedChange={(checked) =>
+                      field.onChange(
+                        toggleValue(
+                          field.value,
+                          String(option.id),
+                          checked === true
+                        )
+                      )
+                    }
+                  />
+                  <span className='truncate'>{option.name}</span>
+                </Label>
+              ))}
+            </div>
+          )}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   )
 }
