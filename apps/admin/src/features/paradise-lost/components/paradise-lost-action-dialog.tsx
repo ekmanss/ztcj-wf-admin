@@ -1,15 +1,33 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { z } from 'zod'
 import { useForm, useWatch, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertTriangle, Plus } from 'lucide-react'
+import {
+  AlertTriangle,
+  Check,
+  ChevronsUpDown,
+  Loader2,
+  Plus,
+  Search,
+} from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -27,17 +45,23 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import { SelectDropdown } from '@/components/select-dropdown'
 import { type ParadiseLostUpsertInput } from '../api/paradise-lost-api'
 import { type InvestmentOption, type ParadiseLostItem } from '../data/schema'
+import { typeLabels } from '../data/data'
 import {
   useCreateParadiseLostMutation,
   useEventNaturesQuery,
@@ -47,7 +71,7 @@ import {
   useParadiseLostYearsQuery,
   useUpdateParadiseLostMutation,
 } from '../hooks/use-paradise-lost-query'
-import { useParadiseLost } from './paradise-lost-provider'
+import { ParadiseLostTagDialog } from './paradise-lost-tag-dialog'
 
 const formSchema = z
   .object({
@@ -203,6 +227,21 @@ const emptyDefaults: ParadiseLostForm = {
   eventSummaryEn: '',
   eventIntroductionCn: '',
   eventIntroductionEn: '',
+}
+
+const typeOptions = [
+  { value: '1', label: '项目', description: '项目资料与运营状态' },
+  { value: '2', label: '机构', description: '机构信息与简介' },
+  { value: '3', label: '人物', description: '人物资料与介绍' },
+  { value: '5', label: '事件', description: '事件类型与性质' },
+] satisfies Array<{
+  value: ParadiseLostForm['type']
+  label: string
+  description: string
+}>
+
+function getFallbackName(value: string) {
+  return value.trim().slice(0, 1) || '?'
 }
 
 function toDateTimeLocal(value: string | null) {
@@ -373,8 +412,8 @@ export function ParadiseLostActionDialog({
   onOpenChange,
 }: ParadiseLostActionDialogProps) {
   const isEdit = !!currentRow
-  const { setOpen } = useParadiseLost()
   const [investmentKeyword, setInvestmentKeyword] = useState('')
+  const [tagDialogOpen, setTagDialogOpen] = useState(false)
   const form = useForm<ParadiseLostForm>({
     resolver: zodResolver(formSchema),
     defaultValues: getDefaultValues(currentRow),
@@ -383,10 +422,10 @@ export function ParadiseLostActionDialog({
   const investmentQuery = useInvestmentOptionsQuery(
     {
       type: Number(type) as ParadiseLostUpsertInput['type'],
-      q: investmentKeyword.trim(),
+      q: investmentKeyword.trim() || undefined,
       pageSize: 20,
     },
-    investmentKeyword.trim().length > 0
+    open
   )
   const tagsQuery = useParadiseLostTagsQuery()
   const yearsQuery = useParadiseLostYearsQuery()
@@ -398,15 +437,6 @@ export function ParadiseLostActionDialog({
   const investmentItems = useMemo(
     () => investmentQuery.data?.items ?? [],
     [investmentQuery.data?.items]
-  )
-
-  const investmentOptions = useMemo(
-    () =>
-      investmentItems.map((item) => ({
-        label: `${item.name} (${item.id})`,
-        value: item.id,
-      })),
-    [investmentItems]
   )
 
   const onSubmit = async (values: ParadiseLostForm) => {
@@ -428,254 +458,526 @@ export function ParadiseLostActionDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(state) => {
-        form.reset(getDefaultValues(currentRow))
-        setInvestmentKeyword('')
-        onOpenChange(state)
-      }}
-    >
-      <DialogContent className='sm:max-w-5xl'>
-        <DialogHeader className='text-start'>
-          <DialogTitle>{isEdit ? '编辑失乐园' : '新增失乐园'}</DialogTitle>
-          <DialogDescription>
-            保存后会同步更新关联源表和专题条目。
-          </DialogDescription>
-        </DialogHeader>
-        {currentRow?.sourceMissing && (
-          <Alert className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100'>
-            <AlertTriangle />
-            <AlertTitle>来源对象缺失</AlertTitle>
-            <AlertDescription className='text-amber-800 dark:text-amber-200'>
-              {currentRow.sourceMissingMessage ||
-                '当前条目使用专题表快照展示，保存前需要重新选择有效关联对象。'}
-            </AlertDescription>
-          </Alert>
-        )}
-        <div className='max-h-[72vh] w-[calc(100%+0.75rem)] overflow-y-auto py-1 pe-3'>
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(state) => {
+          form.reset(getDefaultValues(currentRow))
+          setInvestmentKeyword('')
+          onOpenChange(state)
+        }}
+      >
+        <DialogContent className='grid max-h-[calc(100vh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-5xl'>
+          <DialogHeader className='border-b px-6 py-5 text-start'>
+            <DialogTitle>{isEdit ? '编辑失乐园' : '新增失乐园'}</DialogTitle>
+            <DialogDescription>
+              先选择入选类型和关联对象，再维护该类型的源资料与专题展示信息。
+            </DialogDescription>
+          </DialogHeader>
           <Form {...form}>
             <form
               id='paradise-lost-form'
               onSubmit={form.handleSubmit(onSubmit)}
-              className='space-y-6 px-0.5'
+              className='contents'
             >
-              <div className='grid gap-4 md:grid-cols-[160px_1fr_1fr]'>
-                <FormField
-                  control={form.control}
-                  name='type'
-                  render={({ field }) => (
-                    <FormItem className={fieldClassName()}>
-                      <FormLabel>入选类型</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value)
-                          form.setValue('investId', '')
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value='1'>项目</SelectItem>
-                          <SelectItem value='2'>机构</SelectItem>
-                          <SelectItem value='3'>人物</SelectItem>
-                          <SelectItem value='5'>事件</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+              <div className='max-h-[calc(100vh-12.5rem)] overflow-y-auto px-6 py-5'>
+                <div className='space-y-5'>
+                  {currentRow?.sourceMissing && (
+                    <Alert className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100'>
+                      <AlertTriangle />
+                      <AlertTitle>来源对象缺失</AlertTitle>
+                      <AlertDescription className='text-amber-800 dark:text-amber-200'>
+                        {currentRow.sourceMissingMessage ||
+                          '当前条目使用专题表快照展示，保存前需要重新选择有效关联对象。'}
+                      </AlertDescription>
+                    </Alert>
                   )}
-                />
-                <div className={fieldClassName()}>
-                  <Label htmlFor='paradise-lost-investment-search'>
-                    搜索关联对象
-                  </Label>
-                  <Input
-                    id='paradise-lost-investment-search'
-                    value={investmentKeyword}
-                    onChange={(event) =>
-                      setInvestmentKeyword(event.target.value)
-                    }
-                    placeholder='输入 ID 或名称'
-                    autoComplete='off'
+
+                  <TypeSelector
+                    form={form}
+                    onTypeChange={() => setInvestmentKeyword('')}
+                  />
+
+                  <AssociationSection
+                    form={form}
+                    currentRow={currentRow}
+                    type={type}
+                    keyword={investmentKeyword}
+                    onKeywordChange={setInvestmentKeyword}
+                    investmentItems={investmentItems}
+                    isFetching={investmentQuery.isFetching}
+                    total={investmentQuery.data?.total ?? 0}
+                  />
+
+                  {type === '1' && <ProjectFields form={form} />}
+                  {type === '2' && <OrganizationFields form={form} />}
+                  {type === '3' && <PersonFields form={form} />}
+                  {type === '5' && (
+                    <EventFields
+                      form={form}
+                      eventTypes={eventTypesQuery.data ?? []}
+                      eventNatures={eventNaturesQuery.data ?? []}
+                    />
+                  )}
+
+                  <TopicFieldsSection
+                    form={form}
+                    tags={tagsQuery.data ?? []}
+                    tagsLoading={tagsQuery.isFetching}
+                    years={yearsQuery.data ?? ['2026']}
+                    onAddTag={() => setTagDialogOpen(true)}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name='investId'
-                  render={({ field }) => (
-                    <FormItem className={fieldClassName()}>
-                      <FormLabel>关联对象</FormLabel>
-                      <SelectDropdown
-                        isControlled
-                        defaultValue={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value)
-                          const option = investmentItems.find(
-                            (item) => item.id === value
-                          )
-                          if (option) applyInvestmentToForm(form, option)
-                        }}
-                        placeholder={
-                          investmentKeyword.trim() ? '选择搜索结果' : '先搜索'
-                        }
-                        disabled={investmentOptions.length === 0}
-                        isPending={investmentQuery.isFetching}
-                        items={investmentOptions}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
-
-              {type === '1' && <ProjectFields form={form} />}
-              {type === '2' && <OrganizationFields form={form} />}
-              {type === '3' && <PersonFields form={form} />}
-              {type === '5' && (
-                <EventFields
-                  form={form}
-                  eventTypes={eventTypesQuery.data ?? []}
-                  eventNatures={eventNaturesQuery.data ?? []}
-                />
-              )}
-
-              <div className='grid gap-4 border-t pt-5 md:grid-cols-2'>
-                <FormField
-                  control={form.control}
-                  name='tags'
-                  render={({ field }) => (
-                    <FormItem className='space-y-3 md:col-span-2'>
-                      <div className='flex items-center justify-between gap-2'>
-                        <FormLabel>标签</FormLabel>
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='sm'
-                          className='gap-2'
-                          onClick={() => setOpen('add-tag')}
-                        >
-                          <Plus size={16} />
-                          新增标签
-                        </Button>
-                      </div>
-                      <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-4'>
-                        {(tagsQuery.data ?? []).map((tag) => (
-                          <Label
-                            key={tag.id}
-                            className='flex min-h-9 items-center gap-2 rounded-md border px-3 py-2 text-sm'
-                          >
-                            <Checkbox
-                              checked={field.value.includes(String(tag.id))}
-                              onCheckedChange={(checked) =>
-                                field.onChange(
-                                  toggleValue(
-                                    field.value,
-                                    String(tag.id),
-                                    checked === true
-                                  )
-                                )
-                              }
-                            />
-                            <span className='truncate'>{tag.tagName}</span>
-                          </Label>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name='year'
-                  render={({ field }) => (
-                    <FormItem className='space-y-3 md:col-span-2'>
-                      <FormLabel>入选年度</FormLabel>
-                      <div className='grid gap-2 sm:grid-cols-4 lg:grid-cols-6'>
-                        {(yearsQuery.data ?? ['2026']).map((year) => (
-                          <Label
-                            key={year}
-                            className='flex min-h-9 items-center gap-2 rounded-md border px-3 py-2 text-sm'
-                          >
-                            <Checkbox
-                              checked={field.value.includes(year)}
-                              onCheckedChange={(checked) =>
-                                field.onChange(
-                                  toggleValue(
-                                    field.value,
-                                    year,
-                                    checked === true
-                                  )
-                                )
-                              }
-                            />
-                            <span className='font-mono'>{year}</span>
-                          </Label>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <TextAreaField
-                  form={form}
-                  name='cause'
-                  label='入选原因（中）'
-                  rows={4}
-                />
-                <TextAreaField
-                  form={form}
-                  name='causeEn'
-                  label='入选原因（英）'
-                  rows={4}
-                />
-                <InputField
-                  form={form}
-                  name='date'
-                  label='入选时间'
-                  type='datetime-local'
-                />
-                <InputField form={form} name='image' label='背景图 URL' />
-                <FormField
-                  control={form.control}
-                  name='status'
-                  render={({ field }) => (
-                    <FormItem className={fieldClassName()}>
-                      <FormLabel>显示状态</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value='1'>显示</SelectItem>
-                          <SelectItem value='0'>隐藏</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <InputField form={form} name='desc' label='备注' />
-              </div>
+              <DialogFooter className='border-t bg-muted/20 px-6 py-4'>
+                <DialogClose asChild>
+                  <Button type='button' variant='outline'>
+                    取消
+                  </Button>
+                </DialogClose>
+                <Button type='submit' disabled={isSaving}>
+                  {isSaving && <Loader2 className='animate-spin' />}
+                  {isSaving ? '保存中...' : '保存'}
+                </Button>
+              </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <ParadiseLostTagDialog
+        open={tagDialogOpen}
+        onOpenChange={setTagDialogOpen}
+      />
+    </>
+  )
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+  className,
+  action,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+  className?: string
+  action?: ReactNode
+}) {
+  return (
+    <section
+      className={cn('rounded-lg border bg-card p-4 shadow-xs', className)}
+    >
+      <div className='mb-4 flex flex-wrap items-start justify-between gap-3'>
+        <div className='space-y-1'>
+          <h3 className='text-sm font-semibold'>{title}</h3>
+          {description && (
+            <p className='text-xs leading-5 text-muted-foreground'>
+              {description}
+            </p>
+          )}
         </div>
-        <DialogFooter>
-          <Button type='submit' form='paradise-lost-form' disabled={isSaving}>
-            保存
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {action}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function TypeSelector({
+  form,
+  onTypeChange,
+}: {
+  form: UseFormReturn<ParadiseLostForm>
+  onTypeChange: () => void
+}) {
+  return (
+    <FormSection
+      title='入选类型'
+      description='不同类型对应不同的源表和编辑字段，切换后需要重新选择关联对象。'
+      className='bg-muted/20'
+    >
+      <FormField
+        control={form.control}
+        name='type'
+        render={({ field }) => (
+          <FormItem>
+            <Tabs
+              value={field.value}
+              onValueChange={(value) => {
+                field.onChange(value)
+                form.setValue('investId', '', {
+                  shouldDirty: true,
+                  shouldValidate: false,
+                })
+                form.clearErrors('investId')
+                onTypeChange()
+              }}
+            >
+              <TabsList className='grid h-auto w-full grid-cols-2 gap-1 rounded-md p-1 sm:grid-cols-4'>
+                {typeOptions.map((option) => (
+                  <TabsTrigger
+                    key={option.value}
+                    value={option.value}
+                    className='h-auto flex-col items-start gap-1 px-3 py-2 text-start'
+                  >
+                    <span className='text-sm font-semibold'>
+                      {option.label}
+                    </span>
+                    <span className='text-xs font-normal text-muted-foreground'>
+                      {option.description}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </FormSection>
+  )
+}
+
+function AssociationSection({
+  form,
+  currentRow,
+  type,
+  keyword,
+  onKeywordChange,
+  investmentItems,
+  isFetching,
+  total,
+}: {
+  form: UseFormReturn<ParadiseLostForm>
+  currentRow?: ParadiseLostItem
+  type: ParadiseLostForm['type']
+  keyword: string
+  onKeywordChange: (value: string) => void
+  investmentItems: InvestmentOption[]
+  isFetching: boolean
+  total: number
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const investId = useWatch({ control: form.control, name: 'investId' })
+  const numericType = Number(type) as InvestmentOption['type']
+  const typeText = typeLabels[numericType]
+  const selectedFromItems = investmentItems.find((item) => item.id === investId)
+  const selectedFromCurrentRow =
+    currentRow &&
+    currentRow.investId === investId &&
+    currentRow.type === numericType
+      ? {
+          id: currentRow.investId,
+          name: currentRow.name,
+          avatar: currentRow.avatar,
+          type: currentRow.type,
+        }
+      : undefined
+  const selectedSource = selectedFromItems ?? selectedFromCurrentRow
+
+  return (
+    <FormSection
+      title='关联对象'
+      description={`从已有${typeText}中选择，或输入 ID / 名称搜索后再选择。选择后会把源表字段填入下方编辑区。`}
+    >
+      <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)]'>
+        <FormField
+          control={form.control}
+          name='investId'
+          render={({ field }) => (
+            <FormItem className='space-y-2'>
+              <FormLabel>选择{typeText}</FormLabel>
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      role='combobox'
+                      aria-expanded={pickerOpen}
+                      className='h-11 w-full justify-between'
+                    >
+                      <span className='min-w-0 truncate text-start'>
+                        {selectedSource
+                          ? `${selectedSource.name || selectedSource.id} (${selectedSource.id})`
+                          : `从已有${typeText}中选择`}
+                      </span>
+                      <ChevronsUpDown className='opacity-50' />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent
+                  align='start'
+                  className='w-100 max-w-[calc(100vw-3rem)] p-0'
+                >
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      value={keyword}
+                      onValueChange={onKeywordChange}
+                      placeholder={`搜索${typeText} ID 或名称`}
+                    />
+                    <CommandList className='max-h-80'>
+                      {isFetching && (
+                        <div className='flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground'>
+                          <Loader2 className='size-4 animate-spin' />
+                          正在加载可选{typeText}...
+                        </div>
+                      )}
+                      {!isFetching && investmentItems.length === 0 && (
+                        <CommandEmpty>
+                          {keyword.trim()
+                            ? '没有匹配的关联对象。'
+                            : `暂无可选择的${typeText}。`}
+                        </CommandEmpty>
+                      )}
+                      {investmentItems.length > 0 && (
+                        <CommandGroup
+                          heading={
+                            keyword.trim() ? '搜索结果' : `最近可选${typeText}`
+                          }
+                        >
+                          {investmentItems.map((item) => (
+                            <CommandItem
+                              key={item.id}
+                              value={`${item.id} ${item.name}`}
+                              className='cursor-pointer items-start gap-3 py-2'
+                              onSelect={() => {
+                                field.onChange(item.id)
+                                applyInvestmentToForm(form, item)
+                                setPickerOpen(false)
+                              }}
+                            >
+                              <Avatar className='mt-0.5 size-8 rounded-md'>
+                                <AvatarImage
+                                  src={item.avatar || undefined}
+                                  alt={item.name}
+                                />
+                                <AvatarFallback className='rounded-md text-xs'>
+                                  {getFallbackName(item.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className='min-w-0 flex-1'>
+                                <div className='truncate font-medium'>
+                                  {item.name || item.id}
+                                </div>
+                                <div className='font-mono text-xs text-muted-foreground'>
+                                  {item.id}
+                                </div>
+                              </div>
+                              {field.value === item.id && (
+                                <Check className='mt-1 size-4 text-primary' />
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                <Search className='size-3.5' />
+                {keyword.trim()
+                  ? `按“${keyword.trim()}”筛选，找到 ${total} 条`
+                  : `默认展示最近 ${investmentItems.length} 条，可直接选择或输入关键词搜索`}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className='rounded-md border bg-muted/30 p-3'>
+          <div className='mb-2 flex items-center justify-between gap-2'>
+            <span className='text-xs font-medium text-muted-foreground'>
+              当前关联
+            </span>
+            <Badge variant='outline'>{typeText}</Badge>
+          </div>
+          {selectedSource ? (
+            <div className='flex items-center gap-3'>
+              <Avatar className='size-10 rounded-md'>
+                <AvatarImage
+                  src={selectedSource.avatar || undefined}
+                  alt={selectedSource.name}
+                />
+                <AvatarFallback className='rounded-md text-xs'>
+                  {getFallbackName(selectedSource.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className='min-w-0'>
+                <div className='truncate text-sm font-semibold'>
+                  {selectedSource.name || selectedSource.id}
+                </div>
+                <div className='font-mono text-xs text-muted-foreground'>
+                  {selectedSource.id}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className='rounded-md border border-dashed bg-background/60 px-3 py-4 text-sm text-muted-foreground'>
+              尚未选择关联对象。
+            </div>
+          )}
+        </div>
+      </div>
+    </FormSection>
+  )
+}
+
+function TopicFieldsSection({
+  form,
+  tags,
+  tagsLoading,
+  years,
+  onAddTag,
+}: {
+  form: UseFormReturn<ParadiseLostForm>
+  tags: { id: number; tagName: string }[]
+  tagsLoading: boolean
+  years: string[]
+  onAddTag: () => void
+}) {
+  return (
+    <FormSection
+      title='专题信息'
+      description='这些字段只影响失乐园专题中的展示、筛选和发布状态。'
+      action={
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          className='gap-2'
+          onClick={onAddTag}
+        >
+          <Plus size={16} />
+          新增标签
+        </Button>
+      }
+    >
+      <div className='grid gap-4 md:grid-cols-2'>
+        <FormField
+          control={form.control}
+          name='tags'
+          render={({ field }) => (
+            <FormItem className='space-y-3 md:col-span-2'>
+              <div className='flex items-center justify-between gap-2'>
+                <FormLabel>标签</FormLabel>
+                <span className='text-xs text-muted-foreground'>
+                  已选 {field.value.length} 个
+                </span>
+              </div>
+              <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-4'>
+                {tagsLoading && tags.length === 0 ? (
+                  <div className='col-span-full flex items-center gap-2 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground'>
+                    <Loader2 className='size-4 animate-spin' />
+                    正在加载标签...
+                  </div>
+                ) : (
+                  tags.map((tag) => (
+                    <Label
+                      key={tag.id}
+                      className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60'
+                    >
+                      <Checkbox
+                        checked={field.value.includes(String(tag.id))}
+                        onCheckedChange={(checked) =>
+                          field.onChange(
+                            toggleValue(
+                              field.value,
+                              String(tag.id),
+                              checked === true
+                            )
+                          )
+                        }
+                      />
+                      <span className='truncate'>{tag.tagName}</span>
+                    </Label>
+                  ))
+                )}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='year'
+          render={({ field }) => (
+            <FormItem className='space-y-3 md:col-span-2'>
+              <div className='flex items-center justify-between gap-2'>
+                <FormLabel>入选年度</FormLabel>
+                <span className='text-xs text-muted-foreground'>
+                  至少选择 1 个
+                </span>
+              </div>
+              <div className='grid gap-2 sm:grid-cols-4 lg:grid-cols-6'>
+                {years.map((year) => (
+                  <Label
+                    key={year}
+                    className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60'
+                  >
+                    <Checkbox
+                      checked={field.value.includes(year)}
+                      onCheckedChange={(checked) =>
+                        field.onChange(
+                          toggleValue(field.value, year, checked === true)
+                        )
+                      }
+                    />
+                    <span className='font-mono'>{year}</span>
+                  </Label>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <TextAreaField
+          form={form}
+          name='cause'
+          label='入选原因（中）'
+          rows={4}
+        />
+        <TextAreaField
+          form={form}
+          name='causeEn'
+          label='入选原因（英）'
+          rows={4}
+        />
+        <InputField
+          form={form}
+          name='date'
+          label='入选时间'
+          type='datetime-local'
+        />
+        <InputField form={form} name='image' label='背景图 URL' />
+        <FormField
+          control={form.control}
+          name='status'
+          render={({ field }) => (
+            <FormItem className={fieldClassName()}>
+              <FormLabel>显示状态</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value='1'>显示</SelectItem>
+                  <SelectItem value='0'>隐藏</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <InputField form={form} name='desc' label='备注' />
+      </div>
+    </FormSection>
   )
 }
 
@@ -752,36 +1054,45 @@ function TextAreaField({
 
 function ProjectFields({ form }: { form: UseFormReturn<ParadiseLostForm> }) {
   return (
-    <div className='grid gap-4 border-t pt-5 md:grid-cols-2'>
-      <InputField form={form} name='projectName' label='项目名称（中）' />
-      <InputField form={form} name='projectNameEn' label='项目名称（英）' />
-      <InputField form={form} name='logo' label='项目 LOGO URL' />
-      <FormField
-        control={form.control}
-        name='active'
-        render={({ field }) => (
-          <FormItem className={fieldClassName()}>
-            <FormLabel>运营状态</FormLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value='1'>运营中</SelectItem>
-                <SelectItem value='0'>停止运营</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <InputField form={form} name='oneLiner' label='一句话介绍（中）' />
-      <InputField form={form} name='oneLinerEn' label='一句话介绍（英）' />
-      <TextAreaField form={form} name='description' label='详细介绍（中）' />
-      <TextAreaField form={form} name='descriptionEn' label='详细介绍（英）' />
-    </div>
+    <FormSection
+      title='项目资料'
+      description='选择项目后会自动填充，可在保存时同步回项目源表。'
+    >
+      <div className='grid gap-4 md:grid-cols-2'>
+        <InputField form={form} name='projectName' label='项目名称（中）' />
+        <InputField form={form} name='projectNameEn' label='项目名称（英）' />
+        <InputField form={form} name='logo' label='项目 LOGO URL' />
+        <FormField
+          control={form.control}
+          name='active'
+          render={({ field }) => (
+            <FormItem className={fieldClassName()}>
+              <FormLabel>运营状态</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value='1'>运营中</SelectItem>
+                  <SelectItem value='0'>停止运营</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <InputField form={form} name='oneLiner' label='一句话介绍（中）' />
+        <InputField form={form} name='oneLinerEn' label='一句话介绍（英）' />
+        <TextAreaField form={form} name='description' label='详细介绍（中）' />
+        <TextAreaField
+          form={form}
+          name='descriptionEn'
+          label='详细介绍（英）'
+        />
+      </div>
+    </FormSection>
   )
 }
 
@@ -791,41 +1102,59 @@ function OrganizationFields({
   form: UseFormReturn<ParadiseLostForm>
 }) {
   return (
-    <div className='grid gap-4 border-t pt-5 md:grid-cols-2'>
-      <InputField form={form} name='orgName' label='机构名称（中）' />
-      <InputField form={form} name='orgNameEn' label='机构名称（英）' />
-      <InputField form={form} name='orgLogo' label='机构 LOGO URL' />
-      <InputField form={form} name='orgInfo' label='机构简介（中）' />
-      <InputField form={form} name='orgInfoEn' label='机构简介（英）' />
-      <TextAreaField form={form} name='orgDescription' label='详细介绍（中）' />
-      <TextAreaField
-        form={form}
-        name='orgDescriptionEn'
-        label='详细介绍（英）'
-      />
-    </div>
+    <FormSection
+      title='机构资料'
+      description='选择机构后会自动填充，可在保存时同步回机构源表。'
+    >
+      <div className='grid gap-4 md:grid-cols-2'>
+        <InputField form={form} name='orgName' label='机构名称（中）' />
+        <InputField form={form} name='orgNameEn' label='机构名称（英）' />
+        <InputField form={form} name='orgLogo' label='机构 LOGO URL' />
+        <InputField form={form} name='orgInfo' label='机构简介（中）' />
+        <InputField form={form} name='orgInfoEn' label='机构简介（英）' />
+        <TextAreaField
+          form={form}
+          name='orgDescription'
+          label='详细介绍（中）'
+        />
+        <TextAreaField
+          form={form}
+          name='orgDescriptionEn'
+          label='详细介绍（英）'
+        />
+      </div>
+    </FormSection>
   )
 }
 
 function PersonFields({ form }: { form: UseFormReturn<ParadiseLostForm> }) {
   return (
-    <div className='grid gap-4 border-t pt-5 md:grid-cols-2'>
-      <InputField form={form} name='peopleName' label='人物名称（中）' />
-      <InputField form={form} name='peopleNameEn' label='人物名称（英）' />
-      <InputField form={form} name='headImg' label='人物头像 URL' />
-      <InputField form={form} name='personsOneLiner' label='人物简介（中）' />
-      <InputField form={form} name='personsOneLinerEn' label='人物简介（英）' />
-      <TextAreaField
-        form={form}
-        name='personsIntroduce'
-        label='人物介绍（中）'
-      />
-      <TextAreaField
-        form={form}
-        name='personsIntroduceEn'
-        label='人物介绍（英）'
-      />
-    </div>
+    <FormSection
+      title='人物资料'
+      description='选择人物后会自动填充，可在保存时同步回人物源表。'
+    >
+      <div className='grid gap-4 md:grid-cols-2'>
+        <InputField form={form} name='peopleName' label='人物名称（中）' />
+        <InputField form={form} name='peopleNameEn' label='人物名称（英）' />
+        <InputField form={form} name='headImg' label='人物头像 URL' />
+        <InputField form={form} name='personsOneLiner' label='人物简介（中）' />
+        <InputField
+          form={form}
+          name='personsOneLinerEn'
+          label='人物简介（英）'
+        />
+        <TextAreaField
+          form={form}
+          name='personsIntroduce'
+          label='人物介绍（中）'
+        />
+        <TextAreaField
+          form={form}
+          name='personsIntroduceEn'
+          label='人物介绍（英）'
+        />
+      </div>
+    </FormSection>
   )
 }
 
@@ -839,86 +1168,91 @@ function EventFields({
   eventNatures: { id: number; name: string }[]
 }) {
   return (
-    <div className='grid gap-4 border-t pt-5 md:grid-cols-2'>
-      <InputField form={form} name='eventNameCn' label='事件名称（中）' />
-      <InputField form={form} name='eventNameEn' label='事件名称（英）' />
-      <InputField form={form} name='eventImage160' label='事件配图 URL' />
-      <FormField
-        control={form.control}
-        name='eventTypes'
-        render={({ field }) => (
-          <FormItem className='space-y-3'>
-            <FormLabel>事件类型</FormLabel>
-            <div className='grid gap-2 sm:grid-cols-2'>
-              {eventTypes.map((type) => (
-                <Label
-                  key={type.id}
-                  className='flex min-h-9 items-center gap-2 rounded-md border px-3 py-2 text-sm'
-                >
-                  <Checkbox
-                    checked={field.value.includes(String(type.id))}
-                    onCheckedChange={(checked) =>
-                      field.onChange(
-                        toggleValue(
-                          field.value,
-                          String(type.id),
-                          checked === true
+    <FormSection
+      title='事件资料'
+      description='选择事件后会自动填充，事件类型和性质为必选项。'
+    >
+      <div className='grid gap-4 md:grid-cols-2'>
+        <InputField form={form} name='eventNameCn' label='事件名称（中）' />
+        <InputField form={form} name='eventNameEn' label='事件名称（英）' />
+        <InputField form={form} name='eventImage160' label='事件配图 URL' />
+        <FormField
+          control={form.control}
+          name='eventTypes'
+          render={({ field }) => (
+            <FormItem className='space-y-3'>
+              <FormLabel>事件类型</FormLabel>
+              <div className='grid gap-2 sm:grid-cols-2'>
+                {eventTypes.map((type) => (
+                  <Label
+                    key={type.id}
+                    className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60'
+                  >
+                    <Checkbox
+                      checked={field.value.includes(String(type.id))}
+                      onCheckedChange={(checked) =>
+                        field.onChange(
+                          toggleValue(
+                            field.value,
+                            String(type.id),
+                            checked === true
+                          )
                         )
-                      )
-                    }
-                  />
-                  <span className='truncate'>{type.name}</span>
-                </Label>
-              ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name='eventNatures'
-        render={({ field }) => (
-          <FormItem className='space-y-3'>
-            <FormLabel>事件性质</FormLabel>
-            <div className='grid gap-2 sm:grid-cols-2'>
-              {eventNatures.map((nature) => (
-                <Label
-                  key={nature.id}
-                  className='flex min-h-9 items-center gap-2 rounded-md border px-3 py-2 text-sm'
-                >
-                  <Checkbox
-                    checked={field.value.includes(String(nature.id))}
-                    onCheckedChange={(checked) =>
-                      field.onChange(
-                        toggleValue(
-                          field.value,
-                          String(nature.id),
-                          checked === true
+                      }
+                    />
+                    <span className='truncate'>{type.name}</span>
+                  </Label>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='eventNatures'
+          render={({ field }) => (
+            <FormItem className='space-y-3'>
+              <FormLabel>事件性质</FormLabel>
+              <div className='grid gap-2 sm:grid-cols-2'>
+                {eventNatures.map((nature) => (
+                  <Label
+                    key={nature.id}
+                    className='flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/60'
+                  >
+                    <Checkbox
+                      checked={field.value.includes(String(nature.id))}
+                      onCheckedChange={(checked) =>
+                        field.onChange(
+                          toggleValue(
+                            field.value,
+                            String(nature.id),
+                            checked === true
+                          )
                         )
-                      )
-                    }
-                  />
-                  <span className='truncate'>{nature.name}</span>
-                </Label>
-              ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <InputField form={form} name='eventSummaryCn' label='事件简介（中）' />
-      <InputField form={form} name='eventSummaryEn' label='事件简介（英）' />
-      <TextAreaField
-        form={form}
-        name='eventIntroductionCn'
-        label='事件介绍（中）'
-      />
-      <TextAreaField
-        form={form}
-        name='eventIntroductionEn'
-        label='事件介绍（英）'
-      />
-    </div>
+                      }
+                    />
+                    <span className='truncate'>{nature.name}</span>
+                  </Label>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <InputField form={form} name='eventSummaryCn' label='事件简介（中）' />
+        <InputField form={form} name='eventSummaryEn' label='事件简介（英）' />
+        <TextAreaField
+          form={form}
+          name='eventIntroductionCn'
+          label='事件介绍（中）'
+        />
+        <TextAreaField
+          form={form}
+          name='eventIntroductionEn'
+          label='事件介绍（英）'
+        />
+      </div>
+    </FormSection>
   )
 }
