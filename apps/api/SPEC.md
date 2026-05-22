@@ -35,3 +35,4 @@
 
 - 初始阶段只实现 `users` 最小 CRUD，不引入通用 CRUD factory 或 shared package。
 - Drizzle 只用于生成 SQL migration 文件；schema 变更的实际执行、备份、回滚和审计必须走仓库外数据库流程。
+- API dev/build 使用本地 `@nestjs/cli` 编译运行；不要用 `tsx` 直接运行 `src/main.ts`。

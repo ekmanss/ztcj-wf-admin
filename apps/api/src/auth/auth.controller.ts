@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Inject,
-  Post,
-  Req,
-} from '@nestjs/common'
+import { Body, Controller, Get, Headers, Post, Req } from '@nestjs/common'
 import { LoginDto } from './auth.dto'
 import { AuthService } from './auth.service'
 import { extractAuthToken } from './auth.utils'
@@ -35,7 +27,7 @@ function getClientIp(request: RequestLike) {
 
 @Controller('auth')
 export class AuthController {
-  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
   login(@Body() dto: LoginDto, @Req() request: RequestLike) {
