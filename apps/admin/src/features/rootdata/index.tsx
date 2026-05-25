@@ -225,6 +225,80 @@ function SelectionCell<T>({
   )
 }
 
+function EntityImage({
+  src,
+  alt,
+  shape = 'square',
+  size = 'sm',
+  fit = 'cover',
+}: {
+  src?: string | null
+  alt: string
+  shape?: 'square' | 'circle'
+  size?: 'sm' | 'lg'
+  fit?: 'cover' | 'contain'
+}) {
+  const [failed, setFailed] = useState(false)
+  const normalizedSrc = src?.trim()
+  const sizeClass = size === 'lg' ? 'size-20' : 'size-10'
+  const shapeClass = shape === 'circle' ? 'rounded-full' : 'rounded-md'
+
+  if (!normalizedSrc || failed) {
+    return (
+      <div
+        className={`${sizeClass} ${shapeClass} flex shrink-0 items-center justify-center border bg-muted text-[10px] text-muted-foreground`}
+      >
+        无图
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={`${sizeClass} ${shapeClass} shrink-0 overflow-hidden border bg-background`}
+    >
+      <img
+        src={normalizedSrc}
+        alt={alt}
+        className={`h-full w-full ${fit === 'contain' ? 'object-contain p-1' : 'object-cover'}`}
+        loading='lazy'
+        onError={() => setFailed(true)}
+      />
+    </div>
+  )
+}
+
+function EntityNameCell({
+  imageSrc,
+  imageAlt,
+  title,
+  subtitle,
+  imageShape,
+  imageFit = 'contain',
+}: {
+  imageSrc?: string | null
+  imageAlt: string
+  title: string
+  subtitle?: string
+  imageShape?: 'square' | 'circle'
+  imageFit?: 'cover' | 'contain'
+}) {
+  return (
+    <div className='flex min-w-56 items-center gap-3'>
+      <EntityImage
+        src={imageSrc}
+        alt={imageAlt}
+        shape={imageShape}
+        fit={imageFit}
+      />
+      <div className='min-w-0'>
+        <div className='truncate font-medium'>{title}</div>
+        <div className='truncate text-xs text-muted-foreground'>{subtitle}</div>
+      </div>
+    </div>
+  )
+}
+
 function RootdataShell<T>({
   search,
   setSearch,
@@ -518,10 +592,12 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
             <SelectionCell row={row} selection={selection} />
             <TableCell className='font-mono text-xs'>{row.projectId}</TableCell>
             <TableCell>
-              <div className='font-medium'>{row.projectName}</div>
-              <div className='text-xs text-muted-foreground'>
-                {row.projectNameEn}
-              </div>
+              <EntityNameCell
+                imageSrc={row.logo}
+                imageAlt={`${row.projectName} logo`}
+                title={row.projectName}
+                subtitle={row.projectNameEn}
+              />
             </TableCell>
             <TableCell>{row.tokenSymbol || '-'}</TableCell>
             <TableCell>{statusBadge(row.active)}</TableCell>
@@ -685,10 +761,14 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
             <SelectionCell row={row} selection={selection} />
             <TableCell className='font-mono text-xs'>{row.id}</TableCell>
             <TableCell>
-              <div className='font-medium'>{row.peopleName}</div>
-              <div className='text-xs text-muted-foreground'>
-                {row.peopleNameEn}
-              </div>
+              <EntityNameCell
+                imageSrc={row.headImg}
+                imageAlt={`${row.peopleName} 头像`}
+                title={row.peopleName}
+                subtitle={row.peopleNameEn}
+                imageShape='circle'
+                imageFit='cover'
+              />
             </TableCell>
             <TableCell>{row.heat || '-'}</TableCell>
             <TableCell>{row.influence || '-'}</TableCell>
@@ -845,10 +925,12 @@ export function RootdataOrganizations({
             <SelectionCell row={row} selection={selection} />
             <TableCell className='font-mono text-xs'>{row.orgId}</TableCell>
             <TableCell>
-              <div className='font-medium'>{row.orgName}</div>
-              <div className='text-xs text-muted-foreground'>
-                {row.orgNameEn}
-              </div>
+              <EntityNameCell
+                imageSrc={row.logo}
+                imageAlt={`${row.orgName} logo`}
+                title={row.orgName}
+                subtitle={row.orgNameEn}
+              />
             </TableCell>
             <TableCell>{row.category || '-'}</TableCell>
             <TableCell>{statusBadge(row.active)}</TableCell>
@@ -1612,6 +1694,16 @@ function ProjectDetailDialog({
             <TabsContent value='basic' className='space-y-4'>
               <InfoGrid
                 rows={[
+                  [
+                    'Logo',
+                    <EntityImage
+                      key='project-logo'
+                      src={row.logo}
+                      alt={`${row.projectName} logo`}
+                      size='lg'
+                      fit='contain'
+                    />,
+                  ],
                   ['项目名称', `${row.projectName} / ${row.projectNameEn}`],
                   ['代币', row.tokenSymbol || '-'],
                   ['成立时间', row.establishmentDate || '-'],
@@ -1828,6 +1920,16 @@ function PersonDetailDialog({
             <TabsContent value='basic'>
               <InfoGrid
                 rows={[
+                  [
+                    '头像',
+                    <EntityImage
+                      key='person-image'
+                      src={row.headImg}
+                      alt={`${row.peopleName} 头像`}
+                      shape='circle'
+                      size='lg'
+                    />,
+                  ],
                   ['人物名称', `${row.peopleName} / ${row.peopleNameEn}`],
                   ['一句话介绍', row.oneLiner || '-'],
                   ['X', row.xLink || '-'],
@@ -1936,6 +2038,16 @@ function OrganizationDetailDialog({
             <TabsContent value='basic'>
               <InfoGrid
                 rows={[
+                  [
+                    'Logo',
+                    <EntityImage
+                      key='organization-logo'
+                      src={row.logo}
+                      alt={`${row.orgName} logo`}
+                      size='lg'
+                      fit='contain'
+                    />,
+                  ],
                   ['机构名称', `${row.orgName} / ${row.orgNameEn}`],
                   ['分类', row.category || '-'],
                   ['成立时间', row.establishmentDate || '-'],
