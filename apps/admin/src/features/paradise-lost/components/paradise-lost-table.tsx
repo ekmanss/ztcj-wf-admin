@@ -28,6 +28,27 @@ import { paradiseLostColumns as columns } from './paradise-lost-columns'
 
 const typeFilterValues = new Set([1, 2, 3, 5])
 const statusFilterValues = new Set([0, 1])
+const columnLabels = {
+  type: '类型',
+  tags: '标签',
+  year: '年度',
+  date: '入选时间',
+}
+const facetedFilterCopy = {
+  selectedCountLabel: (selectedCount: number) => `已选择 ${selectedCount} 项`,
+  emptyLabel: '无结果。',
+  clearFiltersLabel: '清除筛选',
+}
+const paginationCopy = {
+  pageLabel: (currentPage: number, totalPages: number) =>
+    `第 ${currentPage} / ${totalPages} 页`,
+  rowsPerPageLabel: '每页行数',
+  firstPageLabel: '跳到第一页',
+  previousPageLabel: '上一页',
+  pageButtonLabel: (page: number) => `跳到第 ${page} 页`,
+  nextPageLabel: '下一页',
+  lastPageLabel: '跳到最后一页',
+}
 
 type ParadiseLostTableProps = {
   data: ParadiseLostItem[]
@@ -133,6 +154,13 @@ export function ParadiseLostTable({
         table={table}
         searchPlaceholder='按名称筛选...'
         searchKey='name'
+        resetLabel='重置'
+        facetedFilterCopy={facetedFilterCopy}
+        viewOptions={{
+          triggerLabel: '视图',
+          toggleColumnsLabel: '切换列显示',
+          columnLabels,
+        }}
         filters={[
           {
             columnId: 'type',
@@ -227,7 +255,11 @@ export function ParadiseLostTable({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
+      <DataTablePagination
+        table={table}
+        className='mt-auto'
+        copy={paginationCopy}
+      />
       <ParadiseLostBulkActions table={table} />
     </div>
   )

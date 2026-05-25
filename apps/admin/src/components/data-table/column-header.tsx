@@ -19,11 +19,17 @@ type DataTableColumnHeaderProps<TData, TValue> =
   React.HTMLAttributes<HTMLDivElement> & {
     column: Column<TData, TValue>
     title: string
+    copy?: {
+      ascLabel?: string
+      descLabel?: string
+      hideLabel?: string
+    }
   }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
+  copy,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
@@ -52,18 +58,18 @@ export function DataTableColumnHeader<TData, TValue>({
         <DropdownMenuContent align='start'>
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
             <ArrowUpIcon className='size-3.5 text-muted-foreground/70' />
-            Asc
+            {copy?.ascLabel ?? 'Asc'}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
             <ArrowDownIcon className='size-3.5 text-muted-foreground/70' />
-            Desc
+            {copy?.descLabel ?? 'Desc'}
           </DropdownMenuItem>
           {column.getCanHide() && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
                 <EyeNoneIcon className='size-3.5 text-muted-foreground/70' />
-                Hide
+                {copy?.hideLabel ?? 'Hide'}
               </DropdownMenuItem>
             </>
           )}

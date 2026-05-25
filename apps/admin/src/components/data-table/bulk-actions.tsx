@@ -14,6 +14,13 @@ import {
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
   entityName: string
+  copy?: {
+    selectedLabel?: (selectedCount: number) => string
+    toolbarLabel?: (selectedCount: number) => string
+    announcement?: (selectedCount: number) => string
+    clearSelection?: string
+    clearSelectionWithShortcut?: string
+  }
   children: React.ReactNode
 }
 
@@ -30,17 +37,28 @@ type DataTableBulkActionsProps<TData> = {
 export function DataTableBulkActions<TData>({
   table,
   entityName,
+  copy,
   children,
 }: DataTableBulkActionsProps<TData>): React.ReactNode | null {
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const selectedCount = selectedRows.length
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [announcement, setAnnouncement] = useState('')
+  const entityLabel = `${entityName}${selectedCount > 1 ? 's' : ''}`
+  const selectedLabel = copy?.selectedLabel?.(selectedCount)
+  const toolbarLabel =
+    copy?.toolbarLabel?.(selectedCount) ??
+    `Bulk actions for ${selectedCount} selected ${entityLabel}`
+  const clearSelectionLabel = copy?.clearSelection ?? 'Clear selection'
+  const clearSelectionWithShortcut =
+    copy?.clearSelectionWithShortcut ?? `${clearSelectionLabel} (Escape)`
 
   // Announce selection changes to screen readers
   useEffect(() => {
     if (selectedCount > 0) {
-      const message = `${selectedCount} ${entityName}${selectedCount > 1 ? 's' : ''} selected. Bulk actions toolbar is available.`
+      const message =
+        copy?.announcement?.(selectedCount) ??
+        `${selectedCount} ${entityName}${selectedCount > 1 ? 's' : ''} selected. Bulk actions toolbar is available.`
 
       // Use queueMicrotask to defer state update and avoid cascading renders
       queueMicrotask(() => {
@@ -51,7 +69,7 @@ export function DataTableBulkActions<TData>({
       const timer = setTimeout(() => setAnnouncement(''), 3000)
       return () => clearTimeout(timer)
     }
-  }, [selectedCount, entityName])
+  }, [selectedCount, entityName, copy])
 
   const handleClearSelection = () => {
     table.resetRowSelection()
@@ -138,7 +156,7 @@ export function DataTableBulkActions<TData>({
       <div
         ref={toolbarRef}
         role='toolbar'
-        aria-label={`Bulk actions for ${selectedCount} selected ${entityName}${selectedCount > 1 ? 's' : ''}`}
+        aria-label={toolbarLabel}
         aria-describedby='bulk-actions-description'
         tabIndex={-1}
         onKeyDown={handleKeyDown}
@@ -163,15 +181,15 @@ export function DataTableBulkActions<TData>({
                 size='icon'
                 onClick={handleClearSelection}
                 className='size-6 rounded-full'
-                aria-label='Clear selection'
-                title='Clear selection (Escape)'
+                aria-label={clearSelectionLabel}
+                title={clearSelectionWithShortcut}
               >
                 <X />
-                <span className='sr-only'>Clear selection</span>
+                <span className='sr-only'>{clearSelectionLabel}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Clear selection (Escape)</p>
+              <p>{clearSelectionWithShortcut}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -185,18 +203,21 @@ export function DataTableBulkActions<TData>({
             className='flex items-center gap-x-1 text-sm'
             id='bulk-actions-description'
           >
-            <Badge
-              variant='default'
-              className='min-w-8 rounded-lg'
-              aria-label={`${selectedCount} selected`}
-            >
-              {selectedCount}
-            </Badge>{' '}
-            <span className='hidden sm:inline'>
-              {entityName}
-              {selectedCount > 1 ? 's' : ''}
-            </span>{' '}
-            selected
+            {selectedLabel ? (
+              <span>{selectedLabel}</span>
+            ) : (
+              <>
+                <Badge
+                  variant='default'
+                  className='min-w-8 rounded-lg'
+                  aria-label={`${selectedCount} selected`}
+                >
+                  {selectedCount}
+                </Badge>{' '}
+                <span className='hidden sm:inline'>{entityLabel}</span>{' '}
+                selected
+              </>
+            )}
           </div>
 
           <Separator

@@ -16,6 +16,17 @@ type ParadiseLostBulkActionsProps<TData> = {
   table: Table<TData>
 }
 
+const bulkActionsCopy = {
+  selectedLabel: (selectedCount: number) =>
+    `已选择 ${selectedCount} 个失乐园条目`,
+  toolbarLabel: (selectedCount: number) =>
+    `对 ${selectedCount} 个已选失乐园条目执行批量操作`,
+  announcement: (selectedCount: number) =>
+    `已选择 ${selectedCount} 个失乐园条目，可使用批量操作工具栏。`,
+  clearSelection: '清除选择',
+  clearSelectionWithShortcut: '清除选择 (Escape)',
+}
+
 export function ParadiseLostBulkActions<TData>({
   table,
 }: ParadiseLostBulkActionsProps<TData>) {
@@ -37,7 +48,11 @@ export function ParadiseLostBulkActions<TData>({
 
   return (
     <>
-      <BulkActionsToolbar table={table} entityName='paradise lost item'>
+      <BulkActionsToolbar
+        table={table}
+        entityName='paradise lost item'
+        copy={bulkActionsCopy}
+      >
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

@@ -9,6 +9,17 @@ type DataTableToolbarProps<TData> = {
   table: Table<TData>
   searchPlaceholder?: string
   searchKey?: string
+  resetLabel?: string
+  facetedFilterCopy?: {
+    selectedCountLabel?: (selectedCount: number) => string
+    emptyLabel?: string
+    clearFiltersLabel?: string
+  }
+  viewOptions?: {
+    triggerLabel?: string
+    toggleColumnsLabel?: string
+    columnLabels?: Record<string, string>
+  }
   filters?: {
     columnId: string
     title: string
@@ -24,6 +35,9 @@ export function DataTableToolbar<TData>({
   table,
   searchPlaceholder = 'Filter...',
   searchKey,
+  resetLabel = 'Reset',
+  facetedFilterCopy,
+  viewOptions,
   filters = [],
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
@@ -60,6 +74,7 @@ export function DataTableToolbar<TData>({
                 key={filter.columnId}
                 column={column}
                 title={filter.title}
+                copy={facetedFilterCopy}
                 options={filter.options}
               />
             )
@@ -74,12 +89,12 @@ export function DataTableToolbar<TData>({
             }}
             className='h-8 px-2 lg:px-3'
           >
-            Reset
+            {resetLabel}
             <Cross2Icon className='ms-2 h-4 w-4' />
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <DataTableViewOptions table={table} copy={viewOptions} />
     </div>
   )
 }

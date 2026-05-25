@@ -32,6 +32,12 @@ function getFallbackName(row: ParadiseLostItem) {
   return row.name.slice(0, 1) || String(row.id).slice(0, 1)
 }
 
+const columnHeaderCopy = {
+  ascLabel: '升序',
+  descLabel: '降序',
+  hideLabel: '隐藏',
+}
+
 export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     id: 'select',
@@ -63,7 +69,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='ID' />
+      <DataTableColumnHeader
+        column={column}
+        title='ID'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <span className='ps-2 font-mono text-xs tabular-nums'>
@@ -76,7 +86,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='名称' />
+      <DataTableColumnHeader
+        column={column}
+        title='名称'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <div className='flex min-w-56 items-center gap-3 ps-3'>
@@ -131,7 +145,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'type',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='类型' />
+      <DataTableColumnHeader
+        column={column}
+        title='类型'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <Badge
@@ -149,7 +167,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'tags',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='标签' />
+      <DataTableColumnHeader
+        column={column}
+        title='标签'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <div className='flex max-w-64 flex-wrap gap-1'>
@@ -169,7 +191,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'year',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='年度' />
+      <DataTableColumnHeader
+        column={column}
+        title='年度'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <span className='font-mono text-xs text-nowrap'>
@@ -181,7 +207,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'date',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='入选时间' />
+      <DataTableColumnHeader
+        column={column}
+        title='入选时间'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <span className='text-xs text-nowrap'>
@@ -192,7 +222,11 @@ export const paradiseLostColumns: ColumnDef<ParadiseLostItem>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='状态' />
+      <DataTableColumnHeader
+        column={column}
+        title='状态'
+        copy={columnHeaderCopy}
+      />
     ),
     cell: ({ row }) => (
       <Badge

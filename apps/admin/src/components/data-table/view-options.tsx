@@ -12,10 +12,16 @@ import {
 
 type DataTableViewOptionsProps<TData> = {
   table: Table<TData>
+  copy?: {
+    triggerLabel?: string
+    toggleColumnsLabel?: string
+    columnLabels?: Record<string, string>
+  }
 }
 
 export function DataTableViewOptions<TData>({
   table,
+  copy,
 }: DataTableViewOptionsProps<TData>) {
   return (
     <DropdownMenu modal={false}>
@@ -26,11 +32,13 @@ export function DataTableViewOptions<TData>({
           className='ms-auto hidden h-8 lg:flex'
         >
           <MixerHorizontalIcon className='size-4' />
-          View
+          {copy?.triggerLabel ?? 'View'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-37.5'>
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          {copy?.toggleColumnsLabel ?? 'Toggle columns'}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()
@@ -46,7 +54,7 @@ export function DataTableViewOptions<TData>({
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {copy?.columnLabels?.[column.id] ?? column.id}
               </DropdownMenuCheckboxItem>
             )
           })}
