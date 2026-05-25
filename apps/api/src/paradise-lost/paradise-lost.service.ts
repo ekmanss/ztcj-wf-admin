@@ -45,6 +45,7 @@ import {
 type DbTransaction = Parameters<Parameters<DbClient['transaction']>[0]>[0]
 type ParadiseLostDb = DbClient | DbTransaction
 type ParadiseLostChanges = Partial<typeof coinAradiseLost.$inferInsert>
+type ParadiseLostTagChanges = Partial<typeof coinAradiseLostTags.$inferInsert>
 type ParadiseLostPayload = CreateParadiseLostDto | UpdateParadiseLostDto
 
 type SourceSnapshot = {
@@ -155,8 +156,13 @@ function toPublicTag(row: typeof coinAradiseLostTags.$inferSelect) {
     tagName: row.tagName ?? '',
     tagNameEn: row.tagNameEn ?? '',
     image: row.image,
+    darkImage: row.darkImage ?? '',
     color: row.color ?? '',
+    darkColor: row.darkColor ?? '',
     backgroundColor: row.backgroundColor ?? '',
+    darkBackgroundColor: row.darkBackgroundColor ?? '',
+    backgroundImage: row.backgroundImage ?? '',
+    darkBackgroundImage: row.darkBackgroundImage ?? '',
     remark: row.remark ?? '',
     createTime: row.createTime,
     updateTime: row.updateTime,
@@ -661,8 +667,13 @@ export class ParadiseLostService {
         tagName: dto.tagName.trim(),
         tagNameEn: trimString(dto.tagNameEn) ?? '',
         image: trimString(dto.image) ?? '',
+        darkImage: trimString(dto.darkImage) ?? '',
         color: trimString(dto.color) ?? '',
+        darkColor: trimString(dto.darkColor) ?? '',
         backgroundColor: trimString(dto.backgroundColor) ?? '',
+        darkBackgroundColor: trimString(dto.darkBackgroundColor) ?? '',
+        backgroundImage: trimString(dto.backgroundImage) ?? '',
+        darkBackgroundImage: trimString(dto.darkBackgroundImage) ?? '',
         remark: trimString(dto.remark) ?? '',
         createTime: now,
         updateTime: now,
@@ -682,6 +693,50 @@ export class ParadiseLostService {
     if (!tag) throw new NotFoundException('Tag not found.')
 
     return toPublicTag(tag)
+  }
+
+  async updateTag(id: number, dto: CreateParadiseLostTagDto) {
+    await this.findTagByIdOrThrow(id)
+
+    const changes: ParadiseLostTagChanges = {
+      tagName: dto.tagName.trim(),
+      tagNameEn: trimString(dto.tagNameEn) ?? '',
+      image: trimString(dto.image) ?? '',
+      darkImage: trimString(dto.darkImage) ?? '',
+      color: trimString(dto.color) ?? '',
+      darkColor: trimString(dto.darkColor) ?? '',
+      backgroundColor: trimString(dto.backgroundColor) ?? '',
+      darkBackgroundColor: trimString(dto.darkBackgroundColor) ?? '',
+      backgroundImage: trimString(dto.backgroundImage) ?? '',
+      darkBackgroundImage: trimString(dto.darkBackgroundImage) ?? '',
+      remark: trimString(dto.remark) ?? '',
+      updateTime: nowDateTime(),
+    }
+
+    await this.db
+      .update(coinAradiseLostTags)
+      .set(changes)
+      .where(eq(coinAradiseLostTags.id, id))
+
+    return this.findTagByIdOrThrow(id)
+  }
+
+  async deleteTag(id: number) {
+    const tag = await this.findTagByIdOrThrow(id)
+    const [reference] = await this.db
+      .select({ total: count() })
+      .from(coinAradiseLost)
+      .where(sql`find_in_set(${String(id)}, ${coinAradiseLost.tags}) > 0`)
+
+    if (Number(reference?.total ?? 0) > 0) {
+      throw new ConflictException('该标签仍被失乐园条目引用，不能删除。')
+    }
+
+    await this.db
+      .delete(coinAradiseLostTags)
+      .where(eq(coinAradiseLostTags.id, id))
+
+    return { id: tag.id }
   }
 
   async listYears() {
@@ -1140,5 +1195,19 @@ export class ParadiseLostService {
     }
 
     return this.toPublicLost(row)
+  }
+
+  private async findTagByIdOrThrow(id: number) {
+    const [row] = await this.db
+      .select()
+      .from(coinAradiseLostTags)
+      .where(eq(coinAradiseLostTags.id, id))
+      .limit(1)
+
+    if (!row) {
+      throw new NotFoundException('Tag not found.')
+    }
+
+    return toPublicTag(row)
   }
 }

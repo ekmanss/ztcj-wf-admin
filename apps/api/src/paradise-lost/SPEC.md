@@ -2,8 +2,9 @@
 
 ## Purpose
 
-- `paradise-lost` 负责旧版“专题数据 / 失乐园”的 HTTP API。
+- `paradise-lost` 负责旧版“专题数据 / 失乐园”和“专题数据 / 标签管理”的 HTTP API。
 - 数据来自旧库 `coin_aradise_lost`，并按旧版行为同步关联的项目、机构、人物或事件源表。
+- 标签数据来自旧库 `coin_aradise_losts_tag`。
 
 ## Boundaries
 
@@ -22,6 +23,8 @@
 - 创建和编辑必须在同一个 transaction 内更新源表和 `coin_aradise_lost`。
 - `/paradise-lost/investments` 支持 `page` / `pageSize` 分页搜索，默认按英文名优先、名称兜底的字母升序返回。
 - 事件源表真实表名是 `sys_events_timeline`，不是旧代码里的未加前缀 `events_timeline`。
+- `/paradise-lost/tags` 提供标签列表、创建、编辑、删除；返回字段覆盖中英文名、图片、深色图片、字体/背景颜色、背景图、备注和时间。
+- 删除标签前必须检查 `coin_aradise_lost.tags` 是否仍引用该标签 id；存在引用时返回冲突错误，不清理历史数据。
 
 ## Testing
 
@@ -33,4 +36,4 @@
 ## Change Notes
 
 - 当前阶段支持图片 URL/路径字段，不实现旧版上传弹窗。
-- 标签管理只提供失乐园表单所需的查询和快速新增，不复刻独立 FastAdmin 标签管理页。
+- 标签管理提供独立页面所需 CRUD，但不复刻旧版 FastAdmin 上传/选择弹窗。

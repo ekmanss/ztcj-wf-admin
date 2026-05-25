@@ -330,8 +330,18 @@ export class CreateParadiseLostTagDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1024)
+  darkImage?: string
+
+  @IsOptional()
+  @IsString()
   @MaxLength(255)
   color?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  darkColor?: string
 
   @IsOptional()
   @IsString()
@@ -340,5 +350,23 @@ export class CreateParadiseLostTagDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
+  darkBackgroundColor?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  backgroundImage?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  darkBackgroundImage?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   remark?: string
 }
+
+export class UpdateParadiseLostTagDto extends CreateParadiseLostTagDto {}

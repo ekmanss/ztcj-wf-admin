@@ -80,10 +80,17 @@ export type CreateParadiseLostTagInput = {
   tagName: string
   tagNameEn?: string
   image?: string
+  darkImage?: string
   color?: string
+  darkColor?: string
   backgroundColor?: string
+  darkBackgroundColor?: string
+  backgroundImage?: string
+  darkBackgroundImage?: string
   remark?: string
 }
+
+export type UpdateParadiseLostTagInput = CreateParadiseLostTagInput
 
 function toSearchParams(params: ListParadiseLostParams) {
   const searchParams = new URLSearchParams()
@@ -172,6 +179,21 @@ export async function createParadiseLostTag(
 ): Promise<ParadiseLostTag> {
   const response = await apiClient.post('/paradise-lost/tags', input)
   return paradiseLostTagsSchema.element.parse(response.data)
+}
+
+export async function updateParadiseLostTag(
+  id: number,
+  input: UpdateParadiseLostTagInput
+): Promise<ParadiseLostTag> {
+  const response = await apiClient.patch(`/paradise-lost/tags/${id}`, input)
+  return paradiseLostTagsSchema.element.parse(response.data)
+}
+
+export async function deleteParadiseLostTag(
+  id: number
+): Promise<{ id: number }> {
+  const response = await apiClient.delete(`/paradise-lost/tags/${id}`)
+  return response.data as { id: number }
 }
 
 export async function listParadiseLostYears(): Promise<string[]> {

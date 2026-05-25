@@ -17,6 +17,7 @@ import {
   ListParadiseLostQueryDto,
   ParadiseLostInvestmentQueryDto,
   UpdateParadiseLostDto,
+  UpdateParadiseLostTagDto,
 } from './paradise-lost.dto'
 import { ParadiseLostService } from './paradise-lost.service'
 
@@ -42,6 +43,19 @@ export class ParadiseLostController {
   @Post('tags')
   createTag(@Body() dto: CreateParadiseLostTagDto) {
     return this.paradiseLostService.createTag(dto)
+  }
+
+  @Patch('tags/:id')
+  updateTag(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateParadiseLostTagDto
+  ) {
+    return this.paradiseLostService.updateTag(id, dto)
+  }
+
+  @Delete('tags/:id')
+  deleteTag(@Param('id', ParseIntPipe) id: number) {
+    return this.paradiseLostService.deleteTag(id)
   }
 
   @Get('years')

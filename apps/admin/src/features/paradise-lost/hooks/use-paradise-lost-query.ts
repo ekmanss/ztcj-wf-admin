@@ -11,6 +11,7 @@ import {
   createParadiseLostTag,
   deleteParadiseLost,
   deleteParadiseLostItems,
+  deleteParadiseLostTag,
   listEventNatures,
   listEventTypes,
   listInvestmentOptions,
@@ -19,10 +20,12 @@ import {
   listParadiseLostYears,
   updateParadiseLost,
   updateParadiseLostStatus,
+  updateParadiseLostTag,
   type CreateParadiseLostTagInput,
   type ListInvestmentOptionsParams,
   type ListParadiseLostParams,
   type ParadiseLostUpsertInput,
+  type UpdateParadiseLostTagInput,
 } from '../api/paradise-lost-api'
 import type { ParadiseLostStatus } from '../data/schema'
 
@@ -209,6 +212,46 @@ export function useCreateParadiseLostTagMutation() {
         queryKey: paradiseLostQueryKeys.tags(),
       })
       toast.success('已新增标签。')
+    },
+  })
+}
+
+export function useUpdateParadiseLostTagMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: number
+      input: UpdateParadiseLostTagInput
+    }) => updateParadiseLostTag(id, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: paradiseLostQueryKeys.tags(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: paradiseLostQueryKeys.lists(),
+      })
+      toast.success('已更新标签。')
+    },
+  })
+}
+
+export function useDeleteParadiseLostTagMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => deleteParadiseLostTag(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: paradiseLostQueryKeys.tags(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: paradiseLostQueryKeys.lists(),
+      })
+      toast.success('已删除标签。')
     },
   })
 }

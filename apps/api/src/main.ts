@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
+import { DatabaseExceptionFilter } from './database-exception.filter'
 
 function getCorsOrigin(corsOrigin?: string) {
   const origins = corsOrigin
@@ -22,6 +23,7 @@ async function bootstrap() {
     origin: getCorsOrigin(config.get<string>('CORS_ORIGIN')),
   })
   app.setGlobalPrefix('api')
+  app.useGlobalFilters(new DatabaseExceptionFilter())
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
