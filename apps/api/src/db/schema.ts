@@ -101,6 +101,41 @@ export const sysAdmins = mysqlTable(
 
 export type SysAdminRow = typeof sysAdmins.$inferSelect
 
+export const wfAppColumns = mysqlTable('wf_app_column', {
+  id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+  code: varchar('code', { length: 255 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  nameEn: varchar('name_en', { length: 255 }).notNull(),
+  level: tinyint('level').notNull(),
+  pid: int('pid').notNull().default(0),
+  status: mysqlEnum('status', ['1', '0']).notNull().default('1'),
+  remarks: text('remarks'),
+  weigh: int('weigh').notNull().default(0),
+  createTime: datetime('create_time', { mode: 'string' }).notNull(),
+  updateTime: datetime('update_time', { mode: 'string' }),
+})
+
+export type WfAppColumnRow = typeof wfAppColumns.$inferSelect
+
+export const wfAppAds = mysqlTable('wf_app_ad', {
+  adId: int('ad_id', { unsigned: true }).autoincrement().primaryKey(),
+  adName: varchar('ad_name', { length: 255 }),
+  adPositionCode: varchar('ad_position_code', { length: 255 }).notNull(),
+  adPageCode: varchar('ad_page_code', { length: 255 }).notNull(),
+  adImageCh: varchar('ad_image_ch', { length: 512 }),
+  adImageEn: varchar('ad_image_en', { length: 512 }),
+  adLink: varchar('ad_link', { length: 512 }),
+  adType: mysqlEnum('ad_type', ['1', '2', '3']),
+  adEffectiveTime: datetime('ad_effective_time', { mode: 'string' }),
+  adInvalidTime: datetime('ad_invalid_time', { mode: 'string' }),
+  weigh: int('weigh'),
+  status: tinyint('status').notNull().default(1),
+  createTime: datetime('create_time', { mode: 'string' }).notNull(),
+  updateTime: datetime('update_time', { mode: 'string' }),
+})
+
+export type WfAppAdRow = typeof wfAppAds.$inferSelect
+
 export const xUsers = mysqlTable(
   'x_users',
   {

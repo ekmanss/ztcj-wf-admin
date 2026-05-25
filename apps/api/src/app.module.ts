@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { AppController } from './app.controller'
+import { AppsModule } from './apps/apps.module'
 import { AuthModule } from './auth/auth.module'
 import { DbModule } from './db/db.module'
 import { validateApiEnv } from './env.validation'
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module'
       validate: validateApiEnv,
     }),
     AuthModule,
+    AppsModule,
     DbModule,
     KolModule,
     ParadiseLostModule,

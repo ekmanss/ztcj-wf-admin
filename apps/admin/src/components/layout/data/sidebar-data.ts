@@ -132,6 +132,22 @@ export const sidebarData: SidebarData = {
       title: '数据',
       items: [
         {
+          title: 'APP管理',
+          icon: Package,
+          items: [
+            {
+              title: 'app栏目管理',
+              url: '/apps/columns',
+              icon: Monitor,
+            },
+            {
+              title: 'APP广告',
+              url: '/apps/ads',
+              icon: Bell,
+            },
+          ],
+        },
+        {
           title: 'KOL管理',
           icon: Users,
           items: [
