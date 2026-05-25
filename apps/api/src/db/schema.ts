@@ -5,6 +5,8 @@ import {
   decimal,
   index,
   int,
+  json,
+  mediumtext,
   mysqlEnum,
   mysqlTable,
   text,
@@ -98,6 +100,132 @@ export const sysAdmins = mysqlTable(
 )
 
 export type SysAdminRow = typeof sysAdmins.$inferSelect
+
+export const xUsers = mysqlTable(
+  'x_users',
+  {
+    restId: varchar('rest_id', { length: 64 }).primaryKey(),
+    requestedUsername: varchar('requested_username', { length: 191 }),
+    username: varchar('username', { length: 191 }).notNull(),
+    name: varchar('name', { length: 191 }),
+    description: text('description'),
+    accountCreatedAt: datetime('account_created_at', { mode: 'string' }),
+    avatarUrl: varchar('avatar_url', { length: 512 }),
+    avatarBackupSourceUrl: varchar('avatar_backup_source_url', {
+      length: 512,
+    }),
+    avatarS3Key: varchar('avatar_s3_key', { length: 512 }),
+    avatarS3Url: varchar('avatar_s3_url', { length: 512 }),
+    avatarBackedUpAt: timestamp('avatar_backed_up_at', { mode: 'string' }),
+    avatarBackupError: varchar('avatar_backup_error', { length: 512 }),
+    profileBannerUrl: varchar('profile_banner_url', { length: 512 }),
+    location: varchar('location', { length: 255 }),
+    affiliationLabel: varchar('affiliation_label', { length: 191 }),
+    affiliationUrl: varchar('affiliation_url', { length: 512 }),
+    affiliationBadgeUrl: varchar('affiliation_badge_url', { length: 512 }),
+    verificationReason: varchar('verification_reason', { length: 512 }),
+    verifiedSinceAt: datetime('verified_since_at', {
+      mode: 'string',
+      fsp: 3,
+    }),
+    followersCount: int('followers_count', { unsigned: true }),
+    friendsCount: int('friends_count', { unsigned: true }),
+    favouritesCount: int('favourites_count', { unsigned: true }),
+    statusesCount: int('statuses_count', { unsigned: true }),
+    listedCount: int('listed_count', { unsigned: true }),
+    mediaCount: int('media_count', { unsigned: true }),
+    creatorSubscriptionsCount: int('creator_subscriptions_count', {
+      unsigned: true,
+    }),
+    userSeedTweetCount: int('user_seed_tweet_count', { unsigned: true }),
+    isProtected: tinyint('is_protected'),
+    canDm: tinyint('can_dm'),
+    isBlueVerified: tinyint('is_blue_verified'),
+    isVerified: tinyint('is_verified'),
+    isIdentityVerified: tinyint('is_identity_verified'),
+    hasGraduatedAccess: tinyint('has_graduated_access'),
+    rawPayload: json('raw_payload').$type<unknown>(),
+    syncedAt: timestamp('synced_at', { mode: 'string' }),
+    platform: mysqlEnum('platform', [
+      'twitter',
+      'telegram',
+      'reddit',
+      'medium',
+    ]),
+    syncStatus: mysqlEnum('sync_status', ['0', '1', '2']).default('0'),
+    status: mysqlEnum('status', ['1', '2']).default('1'),
+    linkUrl: varchar('link_url', { length: 512 }),
+    keywords: varchar('keywords', { length: 255 }),
+    remark: varchar('remark', { length: 255 }),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [
+    uniqueIndex('uk_username').on(table.username),
+    index('idx_requested_username').on(table.requestedUsername),
+    index('idx_followers_count').on(table.followersCount),
+    index('idx_synced_at').on(table.syncedAt),
+    index('idx_avatar_backed_up_at').on(table.avatarBackedUpAt),
+  ]
+)
+
+export type XUserRow = typeof xUsers.$inferSelect
+
+export const xTweets = mysqlTable(
+  'x_tweets',
+  {
+    tweetRestId: varchar('tweet_rest_id', { length: 64 }).primaryKey(),
+    authorRestId: varchar('author_rest_id', { length: 64 }),
+    authorUsername: varchar('author_username', { length: 191 }),
+    authorName: varchar('author_name', { length: 191 }),
+    authorAvatarUrl: varchar('author_avatar_url', { length: 512 }),
+    tweetCreatedAt: datetime('tweet_created_at', { mode: 'string' }),
+    fullText: mediumtext('full_text'),
+    lang: varchar('lang', { length: 32 }),
+    sourceHtml: varchar('source_html', { length: 512 }),
+    conversationId: varchar('conversation_id', { length: 64 }),
+    replyToTweetId: varchar('reply_to_tweet_id', { length: 64 }),
+    replyToUserRestId: varchar('reply_to_user_rest_id', { length: 64 }),
+    replyToUsername: varchar('reply_to_username', { length: 191 }),
+    quotedTweetId: varchar('quoted_tweet_id', { length: 64 }),
+    retweetedTweetId: varchar('retweeted_tweet_id', { length: 64 }),
+    articleRestId: varchar('article_rest_id', { length: 64 }),
+    isReply: tinyint('is_reply').notNull().default(0),
+    isQuote: tinyint('is_quote').notNull().default(0),
+    isRetweet: tinyint('is_retweet').notNull().default(0),
+    hasArticle: tinyint('has_article').notNull().default(0),
+    hasNoteTweet: tinyint('has_note_tweet').notNull().default(0),
+    favoriteCount: int('favorite_count', { unsigned: true }),
+    replyCount: int('reply_count', { unsigned: true }),
+    retweetCount: int('retweet_count', { unsigned: true }),
+    quoteCount: int('quote_count', { unsigned: true }),
+    viewCount: bigint('view_count', { mode: 'number', unsigned: true }),
+    bookmarkCount: int('bookmark_count', { unsigned: true }),
+    rawPayload: json('raw_payload').$type<unknown>(),
+    syncedAt: timestamp('synced_at', { mode: 'string' }),
+    platform: mysqlEnum('platform', [
+      'twitter',
+      'telegram',
+      'reddit',
+      'medium',
+    ]).default('twitter'),
+    status: mysqlEnum('status', ['0', '1']),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [
+    index('idx_author_created_at').on(table.authorRestId, table.tweetCreatedAt),
+    index('idx_conversation_id').on(table.conversationId),
+    index('idx_reply_to_tweet_id').on(table.replyToTweetId),
+    index('idx_quoted_tweet_id').on(table.quotedTweetId),
+    index('idx_retweeted_tweet_id').on(table.retweetedTweetId),
+    index('idx_article_rest_id').on(table.articleRestId),
+    index('idx_synced_at').on(table.syncedAt),
+    index('tweet_created_at').on(table.tweetCreatedAt),
+  ]
+)
+
+export type XTweetRow = typeof xTweets.$inferSelect
 
 export const coinAradiseLost = mysqlTable(
   'coin_aradise_lost',

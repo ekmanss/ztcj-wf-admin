@@ -41,6 +41,8 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedParadiseLostTagsIndexRouteImport } from './routes/_authenticated/paradise-lost/tags/index'
+import { Route as AuthenticatedKolUsersIndexRouteImport } from './routes/_authenticated/kol/users/index'
+import { Route as AuthenticatedKolDynamicsIndexRouteImport } from './routes/_authenticated/kol/dynamics/index'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -210,6 +212,18 @@ const AuthenticatedParadiseLostTagsIndexRoute =
     path: '/paradise-lost/tags/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedKolUsersIndexRoute =
+  AuthenticatedKolUsersIndexRouteImport.update({
+    id: '/kol/users/',
+    path: '/kol/users/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKolDynamicsIndexRoute =
+  AuthenticatedKolDynamicsIndexRouteImport.update({
+    id: '/kol/dynamics/',
+    path: '/kol/dynamics/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -240,6 +254,8 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/kol/dynamics/': typeof AuthenticatedKolDynamicsIndexRoute
+  '/kol/users/': typeof AuthenticatedKolUsersIndexRoute
   '/paradise-lost/tags/': typeof AuthenticatedParadiseLostTagsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -270,6 +286,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/kol/dynamics': typeof AuthenticatedKolDynamicsIndexRoute
+  '/kol/users': typeof AuthenticatedKolUsersIndexRoute
   '/paradise-lost/tags': typeof AuthenticatedParadiseLostTagsIndexRoute
 }
 export interface FileRoutesById {
@@ -305,6 +323,8 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/kol/dynamics/': typeof AuthenticatedKolDynamicsIndexRoute
+  '/_authenticated/kol/users/': typeof AuthenticatedKolUsersIndexRoute
   '/_authenticated/paradise-lost/tags/': typeof AuthenticatedParadiseLostTagsIndexRoute
 }
 export interface FileRouteTypes {
@@ -338,6 +358,8 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/tasks/'
     | '/users/'
+    | '/kol/dynamics/'
+    | '/kol/users/'
     | '/paradise-lost/tags/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -368,6 +390,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/kol/dynamics'
+    | '/kol/users'
     | '/paradise-lost/tags'
   id:
     | '__root__'
@@ -402,6 +426,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/kol/dynamics/'
+    | '/_authenticated/kol/users/'
     | '/_authenticated/paradise-lost/tags/'
   fileRoutesById: FileRoutesById
 }
@@ -646,6 +672,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParadiseLostTagsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kol/users/': {
+      id: '/_authenticated/kol/users/'
+      path: '/kol/users'
+      fullPath: '/kol/users/'
+      preLoaderRoute: typeof AuthenticatedKolUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/kol/dynamics/': {
+      id: '/_authenticated/kol/dynamics/'
+      path: '/kol/dynamics'
+      fullPath: '/kol/dynamics/'
+      preLoaderRoute: typeof AuthenticatedKolDynamicsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -682,6 +722,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedParadiseLostIndexRoute: typeof AuthenticatedParadiseLostIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedKolDynamicsIndexRoute: typeof AuthenticatedKolDynamicsIndexRoute
+  AuthenticatedKolUsersIndexRoute: typeof AuthenticatedKolUsersIndexRoute
   AuthenticatedParadiseLostTagsIndexRoute: typeof AuthenticatedParadiseLostTagsIndexRoute
 }
 
@@ -695,6 +737,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedParadiseLostIndexRoute: AuthenticatedParadiseLostIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedKolDynamicsIndexRoute: AuthenticatedKolDynamicsIndexRoute,
+  AuthenticatedKolUsersIndexRoute: AuthenticatedKolUsersIndexRoute,
   AuthenticatedParadiseLostTagsIndexRoute:
     AuthenticatedParadiseLostTagsIndexRoute,
 }

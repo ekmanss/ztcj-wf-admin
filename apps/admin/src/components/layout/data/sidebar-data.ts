@@ -132,6 +132,22 @@ export const sidebarData: SidebarData = {
       title: '数据',
       items: [
         {
+          title: 'KOL管理',
+          icon: Users,
+          items: [
+            {
+              title: '会员管理',
+              url: '/kol/users',
+              icon: Users,
+            },
+            {
+              title: 'KOL动态',
+              url: '/kol/dynamics',
+              icon: MessagesSquare,
+            },
+          ],
+        },
+        {
           title: '专题数据',
           icon: Database,
           items: [

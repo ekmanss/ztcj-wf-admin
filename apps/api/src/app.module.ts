@@ -4,6 +4,7 @@ import { AppController } from './app.controller'
 import { AuthModule } from './auth/auth.module'
 import { DbModule } from './db/db.module'
 import { validateApiEnv } from './env.validation'
+import { KolModule } from './kol/kol.module'
 import { ParadiseLostModule } from './paradise-lost/paradise-lost.module'
 import { UsersModule } from './users/users.module'
 
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module'
     }),
     AuthModule,
     DbModule,
+    KolModule,
     ParadiseLostModule,
     UsersModule,
   ],
