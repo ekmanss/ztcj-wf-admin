@@ -195,6 +195,22 @@ function legacyStringArray(value: string | null | undefined) {
     .filter(Boolean)
 }
 
+export function normalizeLegacyListText(value: string | null | undefined) {
+  const raw = trimString(value)
+  if (!raw) return ''
+
+  const parsed = jsonParse(raw)
+  if (Array.isArray(parsed)) {
+    return parsed
+      .map(stringValue)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join(', ')
+  }
+
+  return raw
+}
+
 function toLegacyStringArray(values: string[] | undefined) {
   return JSON.stringify(uniqueStrings(values))
 }
@@ -396,7 +412,7 @@ function toPublicOrganization(row: RootdataOrganizationRow) {
     description: row.description ?? '',
     descriptionEn: row.descriptionEn ?? '',
     active: (row.active ?? 1) as RootdataBinaryStatus,
-    category: row.category ?? '',
+    category: normalizeLegacyListText(row.category),
     socialMedia: parseJsonObject(row.socialMedia),
     teamMembers: teamMembers(row.teamMembers),
     heat: row.heat ?? '',
