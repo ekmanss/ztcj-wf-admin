@@ -1,6 +1,8 @@
 import {
   Construction,
+  Building2,
   Database,
+  Landmark,
   LayoutDashboard,
   Monitor,
   Bug,
@@ -16,6 +18,7 @@ import {
   Tags,
   Wrench,
   UserCog,
+  UserRound,
   UserX,
   Users,
   MessagesSquare,
@@ -160,6 +163,27 @@ export const sidebarData: SidebarData = {
               title: 'KOL动态',
               url: '/kol/dynamics',
               icon: MessagesSquare,
+            },
+          ],
+        },
+        {
+          title: '资料管理',
+          icon: Database,
+          items: [
+            {
+              title: '项目管理',
+              url: '/rootdata/projects',
+              icon: Landmark,
+            },
+            {
+              title: '人物管理',
+              url: '/rootdata/persons',
+              icon: UserRound,
+            },
+            {
+              title: '机构管理',
+              url: '/rootdata/organizations',
+              icon: Building2,
             },
           ],
         },

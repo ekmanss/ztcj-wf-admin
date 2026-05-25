@@ -314,15 +314,57 @@ export const coinProjects = mysqlTable(
     autoId: bigint('auto_id', { mode: 'number', unsigned: true })
       .autoincrement()
       .primaryKey(),
+    synStatus: tinyint('syn_status').notNull().default(1),
     projectId: varchar('project_id', { length: 255 }).notNull(),
     projectName: varchar('project_name', { length: 255 }),
     projectNameEn: varchar('project_name_en', { length: 255 }),
     logo: varchar('logo', { length: 500 }),
+    tokenSymbol: varchar('token_symbol', { length: 50 }),
+    coingeckoId: varchar('coingecko_id', { length: 191 }),
+    cmcId: bigint('cmc_id', { mode: 'number' }),
+    establishmentDate: varchar('establishment_date', { length: 50 }),
     oneLiner: varchar('one_liner', { length: 500 }),
     oneLinerEn: varchar('one_liner_en', { length: 500 }),
     description: text('description'),
     descriptionEn: text('description_en'),
     active: tinyint('active'),
+    totalFunding: decimal('total_funding', { precision: 20, scale: 2 }),
+    tags: text('tags'),
+    tagsEn: text('tags_en'),
+    rootdataUrl: varchar('rootdataurl', { length: 500 }),
+    investors: text('investors'),
+    investorsEn: text('investors_en'),
+    socialMedia: text('social_media'),
+    website: varchar('website', { length: 255 }),
+    xUrl: varchar('x_url', { length: 255 }),
+    xId: varchar('x_id', { length: 255 }),
+    similarProject: text('similar_project'),
+    ecosystem: text('ecosystem'),
+    onMainNet: text('on_main_net'),
+    planToLaunch: text('plan_to_launch'),
+    onTestNet: text('on_test_net'),
+    fullyDilutedMarketCap: varchar('fully_diluted_market_cap', { length: 50 }),
+    marketCap: varchar('market_cap', { length: 50 }),
+    price: varchar('price', { length: 50 }),
+    event: text('event'),
+    eventEn: text('event_en'),
+    reports: mediumtext('reports'),
+    teamMembers: text('team_members'),
+    teamMembersEn: text('team_members_en'),
+    tokenLaunchTime: varchar('token_launch_time', { length: 20 }),
+    contracts: text('contracts'),
+    supportExchanges: text('support_exchanges'),
+    heat: varchar('heat', { length: 50 }),
+    heatRank: int('heat_rank'),
+    influence: varchar('influence', { length: 50 }),
+    influenceRank: int('influence_rank'),
+    followers: int('followers'),
+    following: int('following'),
+    projectData: mediumtext('project_data'),
+    isHot: tinyint('is_hot'),
+    isShow: tinyint('is_show'),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
   },
   (table) => [
     uniqueIndex('uk_project_id').on(table.projectId),
@@ -339,16 +381,39 @@ export const rootdataOrganizations = mysqlTable(
     autoId: bigint('auto_id', { mode: 'number', unsigned: true })
       .autoincrement()
       .primaryKey(),
+    synStatus: tinyint('syn_status').notNull().default(1),
     orgId: bigint('org_id', { mode: 'number' }).notNull().default(0),
     orgName: varchar('org_name', { length: 255 }).notNull(),
     orgNameEn: varchar('org_name_en', { length: 255 }).notNull(),
     logo: varchar('logo', { length: 500 }),
+    establishmentDate: varchar('establishment_date', { length: 30 }),
     orgInfo: varchar('org_info', { length: 500 }).default(''),
     orgInfoEn: varchar('org_info_en', { length: 500 }),
     description: text('description'),
     descriptionEn: text('description_en'),
     active: tinyint('active'),
+    category: varchar('category', { length: 100 }),
+    categoryEn: varchar('category_en', { length: 255 }),
+    socialMedia: text('social_media'),
+    investments: text('investments'),
+    investmentsEn: text('investments_en'),
+    rootdataUrl: varchar('rootdataurl', { length: 500 }),
+    teamMembers: text('team_members'),
+    teamMembersEn: text('team_members_en'),
+    heat: varchar('heat', { length: 255 }),
+    heatRank: int('heat_rank'),
+    influence: varchar('influence', { length: 255 }),
+    influenceRank: int('influence_rank'),
+    followers: int('followers'),
+    following: int('following'),
+    orgData: mediumtext('org_data'),
+    region: varchar('region', { length: 50 }),
+    xLink: varchar('x_link', { length: 500 }),
+    linkedin: varchar('linkedin', { length: 500 }),
+    blogLink: varchar('blog_link', { length: 500 }),
     status: tinyint('status').notNull().default(1),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
   },
   (table) => [
     uniqueIndex('uk_org_id').on(table.orgId),
@@ -372,12 +437,173 @@ export const rootdataPersons = mysqlTable(
     headImg: varchar('head_img', { length: 500 }),
     oneLiner: varchar('one_liner', { length: 500 }),
     oneLinerEn: varchar('one_liner_en', { length: 500 }),
+    xLink: varchar('x_link', { length: 500 }),
+    xLinkCount: varchar('x_link_count', { length: 50 }),
+    linkedin: varchar('linkedin', { length: 500 }),
+    blogLink: varchar('blog_link', { length: 500 }),
+    heat: varchar('heat', { length: 255 }),
+    heatRank: int('heat_rank'),
+    influence: varchar('influence', { length: 255 }),
+    influenceRank: int('influence_rank'),
+    followers: int('followers'),
+    following: int('following'),
+    personData: text('person_data'),
     status: tinyint('status').notNull().default(1),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+    syncVersion: int('sync_version', { unsigned: true }),
   },
   (table) => [index('idx_people_name').on(table.peopleName)]
 )
 
 export type RootdataPersonRow = typeof rootdataPersons.$inferSelect
+
+export const rootdataTags = mysqlTable(
+  'rootdata_tags',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true })
+      .autoincrement()
+      .primaryKey(),
+    tagName: varchar('tag_name', { length: 255 }).notNull(),
+    tagNameEn: varchar('tag_name_en', { length: 255 }),
+    tagData: text('tag_data'),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [uniqueIndex('tag_name').on(table.tagName)]
+)
+
+export type RootdataTagRow = typeof rootdataTags.$inferSelect
+
+export const rootdataFundingRoundsFac = mysqlTable(
+  'rootdata_funding_rounds_fac',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true })
+      .autoincrement()
+      .primaryKey(),
+    autoId: bigint('auto_id', { mode: 'number' }),
+    isEdit: tinyint('is_edit').default(0),
+    isDelete: tinyint('is_delete').default(0),
+    projectId: varchar('project_id', { length: 255 }).notNull(),
+    projectName: varchar('project_name', { length: 255 }),
+    logo: varchar('logo', { length: 500 }),
+    roundName: varchar('round_name', { length: 100 }),
+    publishedTime: date('published_time', { mode: 'string' }),
+    amount: decimal('amount', { precision: 20, scale: 2 }),
+    valuation: decimal('valuation', { precision: 20, scale: 2 }),
+    invests: text('invests'),
+    fundingRoundData: text('funding_round_data'),
+    sourceFrom: varchar('source_from', { length: 1024 }),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [
+    index('project_id').on(table.projectId),
+    index('round_name').on(table.roundName),
+    index('published_time').on(table.publishedTime),
+  ]
+)
+
+export type RootdataFundingRoundRow =
+  typeof rootdataFundingRoundsFac.$inferSelect
+
+export const coinFundingJoinProject = mysqlTable(
+  'coin_funding_join_project',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true })
+      .autoincrement()
+      .primaryKey(),
+    type: tinyint('type').notNull(),
+    roundsId: bigint('rounds_id', { mode: 'number', unsigned: true }).notNull(),
+    investId: varchar('invest_id', { length: 255 }).notNull(),
+    projectId: varchar('project_id', { length: 255 }).notNull(),
+    leadInvestor: tinyint('lead_investor'),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [
+    index('type').on(table.type),
+    index('project_id').on(table.projectId),
+  ]
+)
+
+export type CoinFundingJoinProjectRow =
+  typeof coinFundingJoinProject.$inferSelect
+
+export const rootdataPersonJobChanges = mysqlTable(
+  'rootdata_person_job_changes',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true })
+      .autoincrement()
+      .primaryKey(),
+    peopleId: varchar('people_id', { length: 255 }).notNull(),
+    type: tinyint('type').notNull(),
+    companyType: int('company_type').notNull(),
+    companyId: varchar('company_id', { length: 255 }).notNull(),
+    headImg: varchar('head_img', { length: 500 }),
+    peopleName: varchar('people_name', { length: 255 }),
+    company: varchar('company', { length: 255 }),
+    position: varchar('position', { length: 255 }),
+    positionEn: varchar('position_en', { length: 255 }),
+    entryTime: varchar('entry_time', { length: 255 }),
+    leaveTime: varchar('leave_time', { length: 255 }),
+    coreMember: tinyint('core_member'),
+    jobChangeData: text('job_change_data'),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [
+    index('people_id').on(table.peopleId),
+    index('type').on(table.type),
+    index('company_id').on(table.companyId),
+  ]
+)
+
+export type RootdataPersonJobChangeRow =
+  typeof rootdataPersonJobChanges.$inferSelect
+
+export const coinEcosystems = mysqlTable(
+  'coin_ecosystems',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true })
+      .autoincrement()
+      .primaryKey(),
+    ecosystemName: varchar('ecosystem_name', { length: 255 }).notNull(),
+    logo: varchar('logo', { length: 255 }),
+    createdAt: timestamp('created_at', { mode: 'string' }),
+    updatedAt: timestamp('updated_at', { mode: 'string' }),
+  },
+  (table) => [index('ecosystem_name').on(table.ecosystemName)]
+)
+
+export const coingeckoCoinsMarkets = mysqlTable('coingecko_coins_markets', {
+  id: varchar('id', { length: 191 }).primaryKey(),
+  symbol: varchar('symbol', { length: 50 }),
+  name: varchar('name', { length: 255 }),
+  image: varchar('image', { length: 512 }),
+})
+
+export const coingeckoAssetPlatformsList = mysqlTable(
+  'coingecko_asset_platforms_list',
+  {
+    id: varchar('id', { length: 191 }).primaryKey(),
+    name: varchar('name', { length: 255 }),
+    shortname: varchar('shortname', { length: 100 }),
+    imageThumb: varchar('image_thumb', { length: 512 }),
+  },
+  (table) => [index('name').on(table.name)]
+)
+
+export const coingeckoExchangesById = mysqlTable(
+  'coingecko_exchanges_by_id',
+  {
+    id: varchar('id', { length: 191 }).primaryKey(),
+    name: varchar('name', { length: 255 }),
+    image: varchar('image', { length: 512 }),
+    trustScoreRank: int('trust_score_rank'),
+  },
+  (table) => [index('name').on(table.name)]
+)
 
 export const sysEventsTimeline = mysqlTable(
   'sys_events_timeline',
