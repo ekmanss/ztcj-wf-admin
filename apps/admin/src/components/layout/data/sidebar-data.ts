@@ -35,7 +35,7 @@ function getVisibleNavItems(items: NavItem[]): NavItem[] {
 
       return {
         ...item,
-        items: item.items.filter((subItem) => !subItem.isTemplate),
+        items: getVisibleNavItems(item.items),
       }
     })
     .filter((item) => !item.items || item.items.length > 0)
@@ -69,7 +69,7 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: '用户',
       items: [
         // 模板页面：保留示例 route，当前前端菜单暂不展示。
         {
@@ -98,9 +98,14 @@ export const sidebarData: SidebarData = {
           isTemplate: true,
         },
         {
-          title: 'Users',
-          url: '/users',
+          title: '用户管理',
           icon: Users,
+          items: [
+            {
+              title: 'Users',
+              url: '/users',
+            },
+          ],
         },
         {
           title: 'Secured by Clerk',
@@ -124,17 +129,23 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: '专题数据',
+      title: '数据',
       items: [
         {
-          title: '失乐园',
-          url: '/paradise-lost',
+          title: '专题数据',
           icon: Database,
-        },
-        {
-          title: '标签管理',
-          url: '/paradise-lost/tags',
-          icon: Tags,
+          items: [
+            {
+              title: '失乐园',
+              url: '/paradise-lost',
+              icon: Database,
+            },
+            {
+              title: '标签管理',
+              url: '/paradise-lost/tags',
+              icon: Tags,
+            },
+          ],
         },
       ],
     },

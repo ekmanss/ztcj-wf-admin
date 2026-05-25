@@ -14,6 +14,7 @@
 
 - `sidebarData` 保留完整 nav 配置，可包含暂不展示的模板页面。
 - 可见入口必须使用 `visibleSidebarData`，不要直接渲染 `sidebarData.navGroups`。
+- sidebar 分区只作为 label；需要展开的入口使用 `NavItem.items`，保持与 `satnaing/shadcn-admin` 模板中 `Pages -> Auth` 相同的数据形态。
 - 标记为 `isTemplate: true` 的 group 或 item 是模板页面，保留 route 配置但不展示在 sidebar 与 command palette。
 - `TeamSwitcher` 仍作为 sidebar 左上角入口，但当前只展示 `Woofun Admin`；其它标记为 `isTemplate: true` 的 team 和新增 team 入口暂不展示。
 - sidebar 左下角 `NavUser` 菜单暂时隐藏 `Upgrade to Pro`、`Account`、`Billing`、`Notifications`，只保留用户信息和 `Sign out`。
