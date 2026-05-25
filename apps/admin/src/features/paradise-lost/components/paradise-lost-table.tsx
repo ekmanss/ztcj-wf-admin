@@ -26,12 +26,30 @@ import { type ParadiseLostItem } from '../data/schema'
 import { ParadiseLostBulkActions } from './paradise-lost-bulk-actions'
 import { paradiseLostColumns as columns } from './paradise-lost-columns'
 
+const typeFilterValues = new Set([1, 2, 3, 5])
+const statusFilterValues = new Set([0, 1])
+
 type ParadiseLostTableProps = {
   data: ParadiseLostItem[]
   total?: number
   isLoading?: boolean
   search: Record<string, unknown>
   navigate: NavigateFn
+}
+
+function toStringArray(value: unknown) {
+  return Array.isArray(value) ? value.map((item) => String(item)) : []
+}
+
+function toNumberFilterArray(
+  value: unknown,
+  allowedValues: ReadonlySet<number>
+) {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((item) => Number(item))
+    .filter((item) => allowedValues.has(item))
 }
 
 export function ParadiseLostTable({
@@ -60,8 +78,20 @@ export function ParadiseLostTable({
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'name', type: 'string' },
-      { columnId: 'type', searchKey: 'type', type: 'array' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
+      {
+        columnId: 'type',
+        searchKey: 'type',
+        type: 'array',
+        deserialize: toStringArray,
+        serialize: (value) => toNumberFilterArray(value, typeFilterValues),
+      },
+      {
+        columnId: 'status',
+        searchKey: 'status',
+        type: 'array',
+        deserialize: toStringArray,
+        serialize: (value) => toNumberFilterArray(value, statusFilterValues),
+      },
     ],
   })
 
