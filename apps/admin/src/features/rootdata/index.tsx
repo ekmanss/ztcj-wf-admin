@@ -1,9 +1,11 @@
 import * as React from 'react'
+import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { useMemo, useState } from 'react'
 import {
   Building2,
   Edit,
-  FileText,
+  Eye,
+  EyeOff,
   Flame,
   Landmark,
   Plus,
@@ -29,6 +31,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -141,6 +151,14 @@ type TableSelection<T> = {
   clearSelection: () => void
 }
 
+type RowActionItem = {
+  label: string
+  icon: React.ComponentType<{ className?: string; size?: number }>
+  onClick: () => void
+  destructive?: boolean
+  separatorBefore?: boolean
+}
+
 const statusLabels = {
   0: '隐藏',
   1: '显示',
@@ -222,6 +240,50 @@ function SelectionCell<T>({
         }
       />
     </TableCell>
+  )
+}
+
+function RowActionMenu({
+  items,
+  contentClassName = 'w-40',
+}: {
+  items: RowActionItem[]
+  contentClassName?: string
+}) {
+  return (
+    <div className='flex justify-end'>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant='ghost'
+            className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
+          >
+            <DotsHorizontalIcon className='h-4 w-4' />
+            <span className='sr-only'>打开操作菜单</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end' className={contentClassName}>
+          {items.map((item) => {
+            const Icon = item.icon
+
+            return (
+              <React.Fragment key={item.label}>
+                {item.separatorBefore && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={item.onClick}
+                  className={item.destructive ? 'text-red-500!' : undefined}
+                >
+                  {item.label}
+                  <DropdownMenuShortcut>
+                    <Icon size={16} />
+                  </DropdownMenuShortcut>
+                </DropdownMenuItem>
+              </React.Fragment>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }
 
@@ -584,7 +646,7 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
             <TableHead>热门</TableHead>
             <TableHead>显示</TableHead>
             <TableHead>更新时间</TableHead>
-            <TableHead className='w-[230px] text-right'>操作</TableHead>
+            <TableHead className='w-16 text-right'>操作</TableHead>
           </TableRow>
         )}
         renderRow={(row, selection) => (
@@ -607,61 +669,54 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
               {row.updatedAt ?? '-'}
             </TableCell>
             <TableCell>
-              <div className='flex justify-end gap-1'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={() => setDetailRow(row)}
-                >
-                  详情
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() => setFormRow(row)}
-                >
-                  <Edit className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() =>
-                    statusMutation.mutate({
-                      ids: [row.autoId],
-                      field: 'isHot',
-                      value: row.isHot === 1 ? 0 : 1,
-                    })
-                  }
-                >
-                  <Flame className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() =>
-                    statusMutation.mutate({
-                      ids: [row.autoId],
-                      field: 'isShow',
-                      value: row.isShow === 1 ? 0 : 1,
-                    })
-                  }
-                >
-                  <FileText className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() => {
-                    if (
-                      window.confirm(`确认删除项目「${row.projectName}」？`)
-                    ) {
-                      deleteMutation.mutate(row.autoId)
-                    }
-                  }}
-                >
-                  <Trash2 className='size-4' />
-                </Button>
-              </div>
+              <RowActionMenu
+                contentClassName='w-44'
+                items={[
+                  {
+                    label: '查看详情',
+                    icon: Eye,
+                    onClick: () => setDetailRow(row),
+                  },
+                  {
+                    label: '编辑项目',
+                    icon: Edit,
+                    onClick: () => setFormRow(row),
+                  },
+                  {
+                    label: row.isHot === 1 ? '取消热门' : '设为热门',
+                    icon: Flame,
+                    onClick: () =>
+                      statusMutation.mutate({
+                        ids: [row.autoId],
+                        field: 'isHot',
+                        value: row.isHot === 1 ? 0 : 1,
+                      }),
+                  },
+                  {
+                    label: row.isShow === 1 ? '设为隐藏' : '设为显示',
+                    icon: row.isShow === 1 ? EyeOff : Eye,
+                    onClick: () =>
+                      statusMutation.mutate({
+                        ids: [row.autoId],
+                        field: 'isShow',
+                        value: row.isShow === 1 ? 0 : 1,
+                      }),
+                  },
+                  {
+                    label: '删除项目',
+                    icon: Trash2,
+                    destructive: true,
+                    separatorBefore: true,
+                    onClick: () => {
+                      if (
+                        window.confirm(`确认删除项目「${row.projectName}」？`)
+                      ) {
+                        deleteMutation.mutate(row.autoId)
+                      }
+                    },
+                  },
+                ]}
+              />
             </TableCell>
           </TableRow>
         )}
@@ -753,7 +808,7 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
             <TableHead>X 影响力</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>更新时间</TableHead>
-            <TableHead className='w-[190px] text-right'>操作</TableHead>
+            <TableHead className='w-16 text-right'>操作</TableHead>
           </TableRow>
         )}
         renderRow={(row, selection) => (
@@ -777,45 +832,42 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
               {row.updatedAt ?? '-'}
             </TableCell>
             <TableCell>
-              <div className='flex justify-end gap-1'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={() => setDetailRow(row)}
-                >
-                  详情
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() => setFormRow(row)}
-                >
-                  <Edit className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() =>
-                    statusMutation.mutate({
-                      ids: [row.id],
-                      status: row.status === 1 ? 0 : 1,
-                    })
-                  }
-                >
-                  <FileText className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() => {
-                    if (window.confirm(`确认删除人物「${row.peopleName}」？`)) {
-                      deleteMutation.mutate(row.id)
-                    }
-                  }}
-                >
-                  <Trash2 className='size-4' />
-                </Button>
-              </div>
+              <RowActionMenu
+                items={[
+                  {
+                    label: '查看详情',
+                    icon: Eye,
+                    onClick: () => setDetailRow(row),
+                  },
+                  {
+                    label: '编辑人物',
+                    icon: Edit,
+                    onClick: () => setFormRow(row),
+                  },
+                  {
+                    label: row.status === 1 ? '设为隐藏' : '设为显示',
+                    icon: row.status === 1 ? EyeOff : Eye,
+                    onClick: () =>
+                      statusMutation.mutate({
+                        ids: [row.id],
+                        status: row.status === 1 ? 0 : 1,
+                      }),
+                  },
+                  {
+                    label: '删除人物',
+                    icon: Trash2,
+                    destructive: true,
+                    separatorBefore: true,
+                    onClick: () => {
+                      if (
+                        window.confirm(`确认删除人物「${row.peopleName}」？`)
+                      ) {
+                        deleteMutation.mutate(row.id)
+                      }
+                    },
+                  },
+                ]}
+              />
             </TableCell>
           </TableRow>
         )}
@@ -917,7 +969,7 @@ export function RootdataOrganizations({
             <TableHead>运营</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>更新时间</TableHead>
-            <TableHead className='w-[190px] text-right'>操作</TableHead>
+            <TableHead className='w-16 text-right'>操作</TableHead>
           </TableRow>
         )}
         renderRow={(row, selection) => (
@@ -939,45 +991,40 @@ export function RootdataOrganizations({
               {row.updatedAt ?? '-'}
             </TableCell>
             <TableCell>
-              <div className='flex justify-end gap-1'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={() => setDetailRow(row)}
-                >
-                  详情
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() => setFormRow(row)}
-                >
-                  <Edit className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() =>
-                    statusMutation.mutate({
-                      ids: [row.autoId],
-                      status: row.status === 1 ? 0 : 1,
-                    })
-                  }
-                >
-                  <FileText className='size-4' />
-                </Button>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  onClick={() => {
-                    if (window.confirm(`确认删除机构「${row.orgName}」？`)) {
-                      deleteMutation.mutate(row.autoId)
-                    }
-                  }}
-                >
-                  <Trash2 className='size-4' />
-                </Button>
-              </div>
+              <RowActionMenu
+                items={[
+                  {
+                    label: '查看详情',
+                    icon: Eye,
+                    onClick: () => setDetailRow(row),
+                  },
+                  {
+                    label: '编辑机构',
+                    icon: Edit,
+                    onClick: () => setFormRow(row),
+                  },
+                  {
+                    label: row.status === 1 ? '设为隐藏' : '设为显示',
+                    icon: row.status === 1 ? EyeOff : Eye,
+                    onClick: () =>
+                      statusMutation.mutate({
+                        ids: [row.autoId],
+                        status: row.status === 1 ? 0 : 1,
+                      }),
+                  },
+                  {
+                    label: '删除机构',
+                    icon: Trash2,
+                    destructive: true,
+                    separatorBefore: true,
+                    onClick: () => {
+                      if (window.confirm(`确认删除机构「${row.orgName}」？`)) {
+                        deleteMutation.mutate(row.autoId)
+                      }
+                    },
+                  },
+                ]}
+              />
             </TableCell>
           </TableRow>
         )}
@@ -2166,7 +2213,12 @@ function CollectionSection({
           <TableHeader>
             <TableRow>
               {headers.map((header) => (
-                <TableHead key={header}>{header}</TableHead>
+                <TableHead
+                  key={header}
+                  className={header === '操作' ? 'w-16 text-right' : undefined}
+                >
+                  {header}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -2204,14 +2256,22 @@ function RowActions({
   onDelete: () => void
 }) {
   return (
-    <div className='flex justify-end gap-1'>
-      <Button size='icon' variant='ghost' onClick={onEdit}>
-        <Edit className='size-4' />
-      </Button>
-      <Button size='icon' variant='ghost' onClick={onDelete}>
-        <Trash2 className='size-4' />
-      </Button>
-    </div>
+    <RowActionMenu
+      items={[
+        {
+          label: '编辑',
+          icon: Edit,
+          onClick: onEdit,
+        },
+        {
+          label: '删除',
+          icon: Trash2,
+          destructive: true,
+          separatorBefore: true,
+          onClick: onDelete,
+        },
+      ]}
+    />
   )
 }
 
