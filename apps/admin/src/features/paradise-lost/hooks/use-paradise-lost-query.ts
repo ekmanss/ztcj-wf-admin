@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -66,6 +67,7 @@ export function useParadiseLostQuery(search: ParadiseLostSearch) {
   return useQuery({
     queryKey: paradiseLostQueryKeys.list(params),
     queryFn: () => listParadiseLost(params),
+    placeholderData: keepPreviousData,
   })
 }
 

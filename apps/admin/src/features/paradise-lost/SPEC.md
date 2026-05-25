@@ -27,6 +27,7 @@
 - 删除必须二次确认。
 - mutation 期间提交按钮 disabled，并通过 toast 反馈结果。
 - 表格保持 server-side pagination/filter；URL search state 是查询参数来源。
+- 表格 pagination/filter 触发新的列表 query 时保留上一批数据，避免整表切到 loading row 造成闪动。
 - 创建/编辑表单中与前端校验一致的必填项必须有可见“必填”提示。
 
 ## Testing
