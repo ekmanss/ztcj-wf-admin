@@ -1,6 +1,19 @@
 import * as React from 'react'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  type ColumnDef,
+  type SortingState,
+  type VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import {
   Building2,
   Edit,
@@ -9,16 +22,23 @@ import {
   Flame,
   Landmark,
   Plus,
-  SearchIcon,
   Trash2,
   UserRound,
 } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
+import {
+  DataTableBulkActions,
+  DataTableColumnHeader,
+  DataTablePagination,
+  DataTableToolbar,
+} from '@/components/data-table'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { cn } from '@/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -125,6 +145,7 @@ type TablePageProps<T> = RootdataPageProps & {
   title: string
   description: string
   addLabel: string
+  entityName: string
   icon: React.ComponentType<{ className?: string }>
   data: T[]
   total: number
@@ -132,23 +153,17 @@ type TablePageProps<T> = RootdataPageProps & {
   isError: boolean
   onAdd: () => void
   getRowId: (row: T) => string | number
+  columns: ColumnDef<T>[]
+  columnLabels: Record<string, string>
+  filters?: Array<{
+    columnId: string
+    title: string
+    options: { label: string; value: string }[]
+  }>
   renderBulkActions: (
     ids: string[],
     clearSelection: () => void
   ) => React.ReactNode
-  renderHeader: (selection: TableSelection<T>) => React.ReactNode
-  renderRow: (row: T, selection: TableSelection<T>) => React.ReactNode
-}
-
-type TableSelection<T> = {
-  selectedIds: Set<string>
-  isSelected: (row: T) => boolean
-  toggleRow: (row: T, checked: boolean) => void
-  togglePage: (checked: boolean) => void
-  allPageSelected: boolean
-  pageSelectedCount: number
-  selectedCount: number
-  clearSelection: () => void
 }
 
 type RowActionItem = {
@@ -158,6 +173,38 @@ type RowActionItem = {
   destructive?: boolean
   separatorBefore?: boolean
 }
+
+const paginationCopy = {
+  pageLabel: (currentPage: number, totalPages: number) =>
+    `第 ${currentPage} / ${totalPages} 页`,
+  rowsPerPageLabel: '每页行数',
+  firstPageLabel: '跳到第一页',
+  previousPageLabel: '上一页',
+  pageButtonLabel: (page: number) => `跳到第 ${page} 页`,
+  nextPageLabel: '下一页',
+  lastPageLabel: '跳到最后一页',
+}
+
+const facetedFilterCopy = {
+  selectedCountLabel: (selectedCount: number) => `已选择 ${selectedCount} 项`,
+  emptyLabel: '无结果。',
+  clearFiltersLabel: '清除筛选',
+}
+
+const statusFilterOptions = [
+  { label: '显示', value: '1' },
+  { label: '隐藏', value: '0' },
+]
+
+const activeFilterOptions = [
+  { label: '运营中', value: '1' },
+  { label: '停止运营', value: '0' },
+]
+
+const yesNoFilterOptions = [
+  { label: '是', value: '1' },
+  { label: '否', value: '0' },
+]
 
 const statusLabels = {
   0: '隐藏',
@@ -197,49 +244,21 @@ function toStatus(value: string): RootdataStatus {
   return value === '0' ? 0 : 1
 }
 
+function toStringArray(value: unknown) {
+  return Array.isArray(value) ? value.map((item) => String(item)) : []
+}
+
+function toStatusArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.map(Number).filter((item) => item === 0 || item === 1)
+    : []
+}
+
 function statusBadge(value: RootdataStatus) {
   return (
     <Badge variant={value === 1 ? 'default' : 'secondary'}>
       {statusLabels[value]}
     </Badge>
-  )
-}
-
-function SelectionHeader<T>({ selection }: { selection: TableSelection<T> }) {
-  return (
-    <TableHead className='w-10'>
-      <Checkbox
-        aria-label='选择当前页'
-        checked={
-          selection.allPageSelected
-            ? true
-            : selection.pageSelectedCount > 0
-              ? 'indeterminate'
-              : false
-        }
-        onCheckedChange={(checked) => selection.togglePage(checked === true)}
-      />
-    </TableHead>
-  )
-}
-
-function SelectionCell<T>({
-  row,
-  selection,
-}: {
-  row: T
-  selection: TableSelection<T>
-}) {
-  return (
-    <TableCell>
-      <Checkbox
-        aria-label='选择行'
-        checked={selection.isSelected(row)}
-        onCheckedChange={(checked) =>
-          selection.toggleRow(row, checked === true)
-        }
-      />
-    </TableCell>
   )
 }
 
@@ -367,6 +386,7 @@ function RootdataShell<T>({
   title,
   description,
   addLabel,
+  entityName,
   icon: Icon,
   data,
   total,
@@ -374,48 +394,122 @@ function RootdataShell<T>({
   isError,
   onAdd,
   getRowId,
+  columns,
+  columnLabels,
+  filters = [],
   renderBulkActions,
-  renderHeader,
-  renderRow,
 }: TablePageProps<T>) {
-  const searchQ = typeof search.q === 'string' ? search.q : ''
-  const page = typeof search.page === 'number' ? search.page : 1
-  const pageSize = typeof search.pageSize === 'number' ? search.pageSize : 10
-  const maxPage = Math.max(1, Math.ceil(total / pageSize))
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
-  const pageIds = data.map((row) => String(getRowId(row)))
-  const pageSelectedCount = pageIds.filter((id) => selectedIds.has(id)).length
-  const allPageSelected =
-    pageIds.length > 0 && pageSelectedCount === pageIds.length
-  const selectedIdList = Array.from(selectedIds)
-  const clearSelection = () => setSelectedIds(new Set())
-  const selection: TableSelection<T> = {
-    selectedIds,
-    isSelected: (row) => selectedIds.has(String(getRowId(row))),
-    toggleRow: (row, checked) => {
-      const id = String(getRowId(row))
-      setSelectedIds((current) => {
-        const next = new Set(current)
-        if (checked) next.add(id)
-        else next.delete(id)
-        return next
-      })
-    },
-    togglePage: (checked) => {
-      setSelectedIds((current) => {
-        const next = new Set(current)
-        pageIds.forEach((id) => {
-          if (checked) next.add(id)
-          else next.delete(id)
-        })
-        return next
-      })
-    },
-    allPageSelected,
-    pageSelectedCount,
-    selectedCount: selectedIds.size,
-    clearSelection,
+  const [rowSelection, setRowSelection] = useState({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [sorting, setSorting] = useState<SortingState>([])
+
+  const navigate: NavigateFn = ({ search: nextSearch }) => {
+    if (nextSearch === true) return
+
+    setSearch((previous) => {
+      if (typeof nextSearch === 'function') {
+        return nextSearch(previous)
+      }
+
+      return nextSearch
+    })
   }
+
+  const {
+    globalFilter,
+    onGlobalFilterChange,
+    columnFilters,
+    onColumnFiltersChange,
+    pagination,
+    onPaginationChange,
+    ensurePageInRange,
+  } = useTableUrlState({
+    search,
+    navigate,
+    pagination: { defaultPage: 1, defaultPageSize: 10 },
+    globalFilter: { key: 'q' },
+    columnFilters: filters.map((filter) => ({
+      columnId: filter.columnId,
+      searchKey: filter.columnId,
+      type: 'array',
+      deserialize: toStringArray,
+      serialize: toStatusArray,
+    })),
+  })
+
+  const selectionColumn = useMemo<ColumnDef<T>>(
+    () => ({
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label='全选'
+          className='translate-y-0.5'
+        />
+      ),
+      meta: {
+        className: cn('inset-s-0 z-10 rounded-tl-[inherit] max-md:sticky'),
+      },
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label='选择行'
+          className='translate-y-0.5'
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    }),
+    []
+  )
+  const tableColumns = useMemo(
+    () => [selectionColumn, ...columns],
+    [columns, selectionColumn]
+  )
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data,
+    columns: tableColumns,
+    state: {
+      sorting,
+      pagination,
+      rowSelection,
+      columnFilters,
+      columnVisibility,
+      globalFilter,
+    },
+    enableRowSelection: true,
+    getRowId: (row) => String(getRowId(row)),
+    onPaginationChange,
+    onColumnFiltersChange,
+    onGlobalFilterChange,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    manualFiltering: true,
+    manualPagination: true,
+    rowCount: total,
+    getPaginationRowModel: getPaginationRowModel(),
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+  })
+
+  useEffect(() => {
+    ensurePageInRange(Math.ceil(total / pagination.pageSize))
+  }, [total, pagination.pageSize, ensurePageInRange])
+
+  const selectedIds = table
+    .getFilteredSelectedRowModel()
+    .rows.map((row) => row.id)
 
   return (
     <>
@@ -451,56 +545,87 @@ function RootdataShell<T>({
           </Alert>
         )}
 
-        <div className='flex flex-wrap items-center justify-between gap-2'>
-          <form
-            className='flex w-full max-w-md gap-2'
-            onSubmit={(event) => {
-              event.preventDefault()
-              const formData = new FormData(event.currentTarget)
-              const q = String(formData.get('q') ?? '').trim()
-              setSearch((previous) => ({ ...previous, q, page: 1 }))
-            }}
-          >
-            <Input
-              key={searchQ}
-              name='q'
-              defaultValue={searchQ}
-              placeholder='按名称或 ID 搜索'
-            />
-            <Button type='submit' variant='secondary'>
-              <SearchIcon className='size-4' />
-            </Button>
-          </form>
-          <div className='text-sm text-muted-foreground'>共 {total} 条</div>
-        </div>
+        <DataTableToolbar
+          table={table}
+          searchPlaceholder='按名称或 ID 搜索...'
+          resetLabel='重置'
+          facetedFilterCopy={facetedFilterCopy}
+          viewOptions={{
+            triggerLabel: '视图',
+            toggleColumnsLabel: '切换列显示',
+            columnLabels,
+          }}
+          filters={filters}
+        />
 
-        {selectedIds.size > 0 && (
-          <div className='flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2'>
-            <div className='text-sm'>已选择 {selectedIds.size} 条</div>
-            <div className='flex flex-wrap gap-2'>
-              {renderBulkActions(selectedIdList, clearSelection)}
-              <Button size='sm' variant='ghost' onClick={clearSelection}>
-                清空选择
-              </Button>
-            </div>
-          </div>
-        )}
+        <div className='text-sm text-muted-foreground'>共 {total} 条</div>
 
         <div className='overflow-hidden rounded-md border'>
           <Table>
-            <TableHeader>{renderHeader(selection)}</TableHeader>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className='group/row'>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={cn(
+                        'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
+                        header.column.columnDef.meta?.className,
+                        header.column.columnDef.meta?.thClassName
+                      )}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={99} className='h-24 text-center'>
+                  <TableCell
+                    colSpan={tableColumns.length}
+                    className='h-24 text-center'
+                  >
                     正在加载...
                   </TableCell>
                 </TableRow>
-              ) : data.length ? (
-                data.map((row) => renderRow(row, selection))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                    className='group/row'
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
+                          cell.column.columnDef.meta?.className,
+                          cell.column.columnDef.meta?.tdClassName
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={99} className='h-24 text-center'>
+                  <TableCell
+                    colSpan={tableColumns.length}
+                    className='h-24 text-center'
+                  >
                     没有结果。
                   </TableCell>
                 </TableRow>
@@ -509,37 +634,25 @@ function RootdataShell<T>({
           </Table>
         </div>
 
-        <div className='flex items-center justify-between gap-2'>
-          <div className='text-sm text-muted-foreground'>
-            第 {page} / {maxPage} 页
-          </div>
-          <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              disabled={page <= 1}
-              onClick={() =>
-                setSearch((previous) => ({
-                  ...previous,
-                  page: Math.max(1, page - 1),
-                }))
-              }
-            >
-              上一页
-            </Button>
-            <Button
-              variant='outline'
-              disabled={page >= maxPage}
-              onClick={() =>
-                setSearch((previous) => ({
-                  ...previous,
-                  page: Math.min(maxPage, page + 1),
-                }))
-              }
-            >
-              下一页
-            </Button>
-          </div>
-        </div>
+        <DataTablePagination
+          table={table}
+          className='mt-auto'
+          copy={paginationCopy}
+        />
+        <DataTableBulkActions
+          table={table}
+          entityName={entityName}
+          copy={{
+            selectedLabel: (selectedCount) => `已选择 ${selectedCount} 项`,
+            clearSelection: '清除选择',
+            toolbarLabel: (selectedCount) =>
+              `${selectedCount} 个${entityName}的批量操作`,
+            announcement: (selectedCount) =>
+              `已选择 ${selectedCount} 个${entityName}，可使用批量操作工具栏。`,
+          }}
+        >
+          {renderBulkActions(selectedIds, () => table.resetRowSelection())}
+        </DataTableBulkActions>
       </Main>
     </>
   )
@@ -552,6 +665,137 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
   const deleteMutation = useDeleteProjectMutation()
   const bulkDeleteMutation = useDeleteProjectsMutation()
   const statusMutation = useProjectStatusMutation()
+  const columns: ColumnDef<RootdataProject>[] = [
+    {
+      accessorKey: 'projectId',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='ID' />
+      ),
+      cell: ({ row }) => (
+        <span className='font-mono text-xs'>{row.original.projectId}</span>
+      ),
+      meta: { className: 'w-40' },
+      enableHiding: false,
+    },
+    {
+      id: 'project',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='项目' />
+      ),
+      cell: ({ row }) => (
+        <EntityNameCell
+          imageSrc={row.original.logo}
+          imageAlt={`${row.original.projectName} logo`}
+          title={row.original.projectName}
+          subtitle={row.original.projectNameEn}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'tokenSymbol',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='代币' />
+      ),
+      cell: ({ row }) => row.original.tokenSymbol || '-',
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'active',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='运营' />
+      ),
+      cell: ({ row }) => statusBadge(row.original.active),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'isHot',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='热门' />
+      ),
+      cell: ({ row }) => (row.original.isHot ? '是' : '否'),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'isShow',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='显示' />
+      ),
+      cell: ({ row }) => statusBadge(row.original.isShow),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'updatedAt',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='更新时间' />
+      ),
+      cell: ({ row }) => (
+        <span className='text-xs text-muted-foreground'>
+          {row.original.updatedAt ?? '-'}
+        </span>
+      ),
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <RowActionMenu
+          contentClassName='w-44'
+          items={[
+            {
+              label: '查看详情',
+              icon: Eye,
+              onClick: () => setDetailRow(row.original),
+            },
+            {
+              label: '编辑项目',
+              icon: Edit,
+              onClick: () => setFormRow(row.original),
+            },
+            {
+              label: row.original.isHot === 1 ? '取消热门' : '设为热门',
+              icon: Flame,
+              onClick: () =>
+                statusMutation.mutate({
+                  ids: [row.original.autoId],
+                  field: 'isHot',
+                  value: row.original.isHot === 1 ? 0 : 1,
+                }),
+            },
+            {
+              label: row.original.isShow === 1 ? '设为隐藏' : '设为显示',
+              icon: row.original.isShow === 1 ? EyeOff : Eye,
+              onClick: () =>
+                statusMutation.mutate({
+                  ids: [row.original.autoId],
+                  field: 'isShow',
+                  value: row.original.isShow === 1 ? 0 : 1,
+                }),
+            },
+            {
+              label: '删除项目',
+              icon: Trash2,
+              destructive: true,
+              separatorBefore: true,
+              onClick: () => {
+                if (
+                  window.confirm(
+                    `确认删除项目「${row.original.projectName}」？`
+                  )
+                ) {
+                  deleteMutation.mutate(row.original.autoId)
+                }
+              },
+            },
+          ]}
+        />
+      ),
+      meta: { className: 'w-16 text-right' },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ]
 
   return (
     <>
@@ -561,6 +805,7 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
         title='项目管理'
         description='管理项目基础资料、社交媒体、团队、融资和展示状态。'
         addLabel='新增项目'
+        entityName='项目'
         icon={Landmark}
         data={query.data?.items ?? []}
         total={query.data?.total ?? 0}
@@ -568,6 +813,21 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
         isError={query.isError}
         onAdd={() => setFormRow(null)}
         getRowId={(row) => row.autoId}
+        columns={columns}
+        columnLabels={{
+          projectId: 'ID',
+          project: '项目',
+          tokenSymbol: '代币',
+          active: '运营',
+          isHot: '热门',
+          isShow: '显示',
+          updatedAt: '更新时间',
+        }}
+        filters={[
+          { columnId: 'active', title: '运营', options: activeFilterOptions },
+          { columnId: 'isHot', title: '热门', options: yesNoFilterOptions },
+          { columnId: 'isShow', title: '显示', options: statusFilterOptions },
+        ]}
         renderBulkActions={(ids, clearSelection) => {
           const numericIds = ids.map(Number)
           return (
@@ -636,90 +896,6 @@ export function RootdataProjects({ search, setSearch }: RootdataPageProps) {
             </>
           )
         }}
-        renderHeader={(selection) => (
-          <TableRow>
-            <SelectionHeader selection={selection} />
-            <TableHead>ID</TableHead>
-            <TableHead>项目</TableHead>
-            <TableHead>代币</TableHead>
-            <TableHead>运营</TableHead>
-            <TableHead>热门</TableHead>
-            <TableHead>显示</TableHead>
-            <TableHead>更新时间</TableHead>
-            <TableHead className='w-16 text-right'>操作</TableHead>
-          </TableRow>
-        )}
-        renderRow={(row, selection) => (
-          <TableRow key={row.autoId}>
-            <SelectionCell row={row} selection={selection} />
-            <TableCell className='font-mono text-xs'>{row.projectId}</TableCell>
-            <TableCell>
-              <EntityNameCell
-                imageSrc={row.logo}
-                imageAlt={`${row.projectName} logo`}
-                title={row.projectName}
-                subtitle={row.projectNameEn}
-              />
-            </TableCell>
-            <TableCell>{row.tokenSymbol || '-'}</TableCell>
-            <TableCell>{statusBadge(row.active)}</TableCell>
-            <TableCell>{row.isHot ? '是' : '否'}</TableCell>
-            <TableCell>{statusBadge(row.isShow)}</TableCell>
-            <TableCell className='text-xs text-muted-foreground'>
-              {row.updatedAt ?? '-'}
-            </TableCell>
-            <TableCell>
-              <RowActionMenu
-                contentClassName='w-44'
-                items={[
-                  {
-                    label: '查看详情',
-                    icon: Eye,
-                    onClick: () => setDetailRow(row),
-                  },
-                  {
-                    label: '编辑项目',
-                    icon: Edit,
-                    onClick: () => setFormRow(row),
-                  },
-                  {
-                    label: row.isHot === 1 ? '取消热门' : '设为热门',
-                    icon: Flame,
-                    onClick: () =>
-                      statusMutation.mutate({
-                        ids: [row.autoId],
-                        field: 'isHot',
-                        value: row.isHot === 1 ? 0 : 1,
-                      }),
-                  },
-                  {
-                    label: row.isShow === 1 ? '设为隐藏' : '设为显示',
-                    icon: row.isShow === 1 ? EyeOff : Eye,
-                    onClick: () =>
-                      statusMutation.mutate({
-                        ids: [row.autoId],
-                        field: 'isShow',
-                        value: row.isShow === 1 ? 0 : 1,
-                      }),
-                  },
-                  {
-                    label: '删除项目',
-                    icon: Trash2,
-                    destructive: true,
-                    separatorBefore: true,
-                    onClick: () => {
-                      if (
-                        window.confirm(`确认删除项目「${row.projectName}」？`)
-                      ) {
-                        deleteMutation.mutate(row.autoId)
-                      }
-                    },
-                  },
-                ]}
-              />
-            </TableCell>
-          </TableRow>
-        )}
       />
       {formRow !== undefined && (
         <ProjectFormDialog
@@ -744,6 +920,117 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
   const deleteMutation = useDeletePersonMutation()
   const bulkDeleteMutation = useDeletePersonsMutation()
   const statusMutation = usePersonStatusMutation()
+  const columns: ColumnDef<RootdataPerson>[] = [
+    {
+      accessorKey: 'id',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='ID' />
+      ),
+      cell: ({ row }) => (
+        <span className='font-mono text-xs'>{row.original.id}</span>
+      ),
+      meta: { className: 'w-40' },
+      enableHiding: false,
+    },
+    {
+      id: 'person',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='人物' />
+      ),
+      cell: ({ row }) => (
+        <EntityNameCell
+          imageSrc={row.original.headImg}
+          imageAlt={`${row.original.peopleName} 头像`}
+          title={row.original.peopleName}
+          subtitle={row.original.peopleNameEn}
+          imageShape='circle'
+          imageFit='cover'
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'heat',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='X 热度' />
+      ),
+      cell: ({ row }) => row.original.heat || '-',
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'influence',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='X 影响力' />
+      ),
+      cell: ({ row }) => row.original.influence || '-',
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='状态' />
+      ),
+      cell: ({ row }) => statusBadge(row.original.status),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'updatedAt',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='更新时间' />
+      ),
+      cell: ({ row }) => (
+        <span className='text-xs text-muted-foreground'>
+          {row.original.updatedAt ?? '-'}
+        </span>
+      ),
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <RowActionMenu
+          items={[
+            {
+              label: '查看详情',
+              icon: Eye,
+              onClick: () => setDetailRow(row.original),
+            },
+            {
+              label: '编辑人物',
+              icon: Edit,
+              onClick: () => setFormRow(row.original),
+            },
+            {
+              label: row.original.status === 1 ? '设为隐藏' : '设为显示',
+              icon: row.original.status === 1 ? EyeOff : Eye,
+              onClick: () =>
+                statusMutation.mutate({
+                  ids: [row.original.id],
+                  status: row.original.status === 1 ? 0 : 1,
+                }),
+            },
+            {
+              label: '删除人物',
+              icon: Trash2,
+              destructive: true,
+              separatorBefore: true,
+              onClick: () => {
+                if (
+                  window.confirm(`确认删除人物「${row.original.peopleName}」？`)
+                ) {
+                  deleteMutation.mutate(row.original.id)
+                }
+              },
+            },
+          ]}
+        />
+      ),
+      meta: { className: 'w-16 text-right' },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ]
 
   return (
     <>
@@ -753,6 +1040,7 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
         title='人物管理'
         description='管理人物资料、工作经历和对外投资记录。'
         addLabel='新增人物'
+        entityName='人物'
         icon={UserRound}
         data={query.data?.items ?? []}
         total={query.data?.total ?? 0}
@@ -760,6 +1048,18 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
         isError={query.isError}
         onAdd={() => setFormRow(null)}
         getRowId={(row) => row.id}
+        columns={columns}
+        columnLabels={{
+          id: 'ID',
+          person: '人物',
+          heat: 'X 热度',
+          influence: 'X 影响力',
+          status: '状态',
+          updatedAt: '更新时间',
+        }}
+        filters={[
+          { columnId: 'status', title: '状态', options: statusFilterOptions },
+        ]}
         renderBulkActions={(ids, clearSelection) => (
           <>
             <Button
@@ -799,78 +1099,6 @@ export function RootdataPersons({ search, setSearch }: RootdataPageProps) {
             </Button>
           </>
         )}
-        renderHeader={(selection) => (
-          <TableRow>
-            <SelectionHeader selection={selection} />
-            <TableHead>ID</TableHead>
-            <TableHead>人物</TableHead>
-            <TableHead>X 热度</TableHead>
-            <TableHead>X 影响力</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>更新时间</TableHead>
-            <TableHead className='w-16 text-right'>操作</TableHead>
-          </TableRow>
-        )}
-        renderRow={(row, selection) => (
-          <TableRow key={row.id}>
-            <SelectionCell row={row} selection={selection} />
-            <TableCell className='font-mono text-xs'>{row.id}</TableCell>
-            <TableCell>
-              <EntityNameCell
-                imageSrc={row.headImg}
-                imageAlt={`${row.peopleName} 头像`}
-                title={row.peopleName}
-                subtitle={row.peopleNameEn}
-                imageShape='circle'
-                imageFit='cover'
-              />
-            </TableCell>
-            <TableCell>{row.heat || '-'}</TableCell>
-            <TableCell>{row.influence || '-'}</TableCell>
-            <TableCell>{statusBadge(row.status)}</TableCell>
-            <TableCell className='text-xs text-muted-foreground'>
-              {row.updatedAt ?? '-'}
-            </TableCell>
-            <TableCell>
-              <RowActionMenu
-                items={[
-                  {
-                    label: '查看详情',
-                    icon: Eye,
-                    onClick: () => setDetailRow(row),
-                  },
-                  {
-                    label: '编辑人物',
-                    icon: Edit,
-                    onClick: () => setFormRow(row),
-                  },
-                  {
-                    label: row.status === 1 ? '设为隐藏' : '设为显示',
-                    icon: row.status === 1 ? EyeOff : Eye,
-                    onClick: () =>
-                      statusMutation.mutate({
-                        ids: [row.id],
-                        status: row.status === 1 ? 0 : 1,
-                      }),
-                  },
-                  {
-                    label: '删除人物',
-                    icon: Trash2,
-                    destructive: true,
-                    separatorBefore: true,
-                    onClick: () => {
-                      if (
-                        window.confirm(`确认删除人物「${row.peopleName}」？`)
-                      ) {
-                        deleteMutation.mutate(row.id)
-                      }
-                    },
-                  },
-                ]}
-              />
-            </TableCell>
-          </TableRow>
-        )}
       />
       {formRow !== undefined && (
         <PersonFormDialog
@@ -900,6 +1128,113 @@ export function RootdataOrganizations({
   const deleteMutation = useDeleteOrganizationMutation()
   const bulkDeleteMutation = useDeleteOrganizationsMutation()
   const statusMutation = useOrganizationStatusMutation()
+  const columns: ColumnDef<RootdataOrganization>[] = [
+    {
+      accessorKey: 'orgId',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='ID' />
+      ),
+      cell: ({ row }) => (
+        <span className='font-mono text-xs'>{row.original.orgId}</span>
+      ),
+      meta: { className: 'w-40' },
+      enableHiding: false,
+    },
+    {
+      id: 'organization',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='机构' />
+      ),
+      cell: ({ row }) => (
+        <EntityNameCell
+          imageSrc={row.original.logo}
+          imageAlt={`${row.original.orgName} logo`}
+          title={row.original.orgName}
+          subtitle={row.original.orgNameEn}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'category',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='分类' />
+      ),
+      cell: ({ row }) => row.original.category || '-',
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'active',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='运营' />
+      ),
+      cell: ({ row }) => statusBadge(row.original.active),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='状态' />
+      ),
+      cell: ({ row }) => statusBadge(row.original.status),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'updatedAt',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='更新时间' />
+      ),
+      cell: ({ row }) => (
+        <span className='text-xs text-muted-foreground'>
+          {row.original.updatedAt ?? '-'}
+        </span>
+      ),
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <RowActionMenu
+          items={[
+            {
+              label: '查看详情',
+              icon: Eye,
+              onClick: () => setDetailRow(row.original),
+            },
+            {
+              label: '编辑机构',
+              icon: Edit,
+              onClick: () => setFormRow(row.original),
+            },
+            {
+              label: row.original.status === 1 ? '设为隐藏' : '设为显示',
+              icon: row.original.status === 1 ? EyeOff : Eye,
+              onClick: () =>
+                statusMutation.mutate({
+                  ids: [row.original.autoId],
+                  status: row.original.status === 1 ? 0 : 1,
+                }),
+            },
+            {
+              label: '删除机构',
+              icon: Trash2,
+              destructive: true,
+              separatorBefore: true,
+              onClick: () => {
+                if (window.confirm(`确认删除机构「${row.original.orgName}」？`)) {
+                  deleteMutation.mutate(row.original.autoId)
+                }
+              },
+            },
+          ]}
+        />
+      ),
+      meta: { className: 'w-16 text-right' },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ]
 
   return (
     <>
@@ -909,6 +1244,7 @@ export function RootdataOrganizations({
         title='机构管理'
         description='管理机构资料、团队成员和对外投资记录。'
         addLabel='新增机构'
+        entityName='机构'
         icon={Building2}
         data={query.data?.items ?? []}
         total={query.data?.total ?? 0}
@@ -916,6 +1252,19 @@ export function RootdataOrganizations({
         isError={query.isError}
         onAdd={() => setFormRow(null)}
         getRowId={(row) => row.autoId}
+        columns={columns}
+        columnLabels={{
+          orgId: 'ID',
+          organization: '机构',
+          category: '分类',
+          active: '运营',
+          status: '状态',
+          updatedAt: '更新时间',
+        }}
+        filters={[
+          { columnId: 'active', title: '运营', options: activeFilterOptions },
+          { columnId: 'status', title: '状态', options: statusFilterOptions },
+        ]}
         renderBulkActions={(ids, clearSelection) => {
           const numericIds = ids.map(Number)
           return (
@@ -960,74 +1309,6 @@ export function RootdataOrganizations({
             </>
           )
         }}
-        renderHeader={(selection) => (
-          <TableRow>
-            <SelectionHeader selection={selection} />
-            <TableHead>ID</TableHead>
-            <TableHead>机构</TableHead>
-            <TableHead>分类</TableHead>
-            <TableHead>运营</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>更新时间</TableHead>
-            <TableHead className='w-16 text-right'>操作</TableHead>
-          </TableRow>
-        )}
-        renderRow={(row, selection) => (
-          <TableRow key={row.autoId}>
-            <SelectionCell row={row} selection={selection} />
-            <TableCell className='font-mono text-xs'>{row.orgId}</TableCell>
-            <TableCell>
-              <EntityNameCell
-                imageSrc={row.logo}
-                imageAlt={`${row.orgName} logo`}
-                title={row.orgName}
-                subtitle={row.orgNameEn}
-              />
-            </TableCell>
-            <TableCell>{row.category || '-'}</TableCell>
-            <TableCell>{statusBadge(row.active)}</TableCell>
-            <TableCell>{statusBadge(row.status)}</TableCell>
-            <TableCell className='text-xs text-muted-foreground'>
-              {row.updatedAt ?? '-'}
-            </TableCell>
-            <TableCell>
-              <RowActionMenu
-                items={[
-                  {
-                    label: '查看详情',
-                    icon: Eye,
-                    onClick: () => setDetailRow(row),
-                  },
-                  {
-                    label: '编辑机构',
-                    icon: Edit,
-                    onClick: () => setFormRow(row),
-                  },
-                  {
-                    label: row.status === 1 ? '设为隐藏' : '设为显示',
-                    icon: row.status === 1 ? EyeOff : Eye,
-                    onClick: () =>
-                      statusMutation.mutate({
-                        ids: [row.autoId],
-                        status: row.status === 1 ? 0 : 1,
-                      }),
-                  },
-                  {
-                    label: '删除机构',
-                    icon: Trash2,
-                    destructive: true,
-                    separatorBefore: true,
-                    onClick: () => {
-                      if (window.confirm(`确认删除机构「${row.orgName}」？`)) {
-                        deleteMutation.mutate(row.autoId)
-                      }
-                    },
-                  },
-                ]}
-              />
-            </TableCell>
-          </TableRow>
-        )}
       />
       {formRow !== undefined && (
         <OrganizationFormDialog

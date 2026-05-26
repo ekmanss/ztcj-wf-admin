@@ -30,6 +30,7 @@
 - 项目、机构列表和详情必须展示 `logo`；人物列表和详情必须展示 `headImg`。
 - 创建/编辑表单中与前端校验一致的必填项必须有可见“必填”提示。
 - 列表与详情集合表的行级操作使用折叠菜单；每个菜单项必须同时有中文文本和图标。
+- 项目、人物、机构主列表使用 TanStack Table，并复用 shared `DataTableToolbar`、`DataTablePagination` 和 `DataTableBulkActions`。
 
 ## Testing
 
