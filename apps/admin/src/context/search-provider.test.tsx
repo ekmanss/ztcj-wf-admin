@@ -118,6 +118,26 @@ describe('SearchProvider and CommandMenu', () => {
       .not.toBeInTheDocument()
   })
 
+  it('finds a nested route by its visible child title', async () => {
+    const screen = await renderWithSearchProvider()
+
+    await openCommandPalette(screen)
+
+    await userEvent.fill(
+      screen.getByPlaceholder(COMMAND_MENU_PLACEHOLDER),
+      '会员'
+    )
+
+    await expect.element(screen.getByText('会员管理')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByText('会员管理'))
+
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/kol/users' })
+    await expect
+      .element(screen.getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
+      .not.toBeInTheDocument()
+  })
+
   it('does not expose template nav items in the command palette', async () => {
     const screen = await renderWithSearchProvider()
     const { getByPlaceholder, getByText } = screen
